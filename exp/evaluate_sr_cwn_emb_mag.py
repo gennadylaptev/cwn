@@ -5,9 +5,9 @@ import numpy as np
 import random
 from definitions import ROOT_DIR
 
-from exp.prepare_sr_tests import prepare
-from mp.models import MessagePassingAgnostic, SparseCIN
-from data.data_loading import DataLoader, load_dataset
+from cwn.exp.prepare_sr_tests import prepare
+from cwn.mp.models import MessagePassingAgnostic, SparseCIN
+from cwn.data.data_loading import DataLoader, load_dataset
 
 __families__ = [
     'sr16622',
@@ -53,11 +53,11 @@ def compute_embeddings(family, baseline, seed):
     # Load reference dataset
     complexes = load_dataset(family, max_dim=2, max_ring_size=max_ring_size, init_method=init)
     data_loader = DataLoader(complexes, batch_size=8, shuffle=False, num_workers=16, max_dim=2)
-    
+
     # Instantiate model
     if not baseline:
-        model = SparseCIN(num_input_features=1, num_classes=complexes.num_classes, num_layers=num_layers, hidden=hidden, 
-                            use_coboundaries=use_coboundaries, nonlinearity=nonlinearity, graph_norm=graph_norm, 
+        model = SparseCIN(num_input_features=1, num_classes=complexes.num_classes, num_layers=num_layers, hidden=hidden,
+                            use_coboundaries=use_coboundaries, nonlinearity=nonlinearity, graph_norm=graph_norm,
                             readout=readout, final_readout=final_readout, readout_dims=readout_dims)
     else:
         hidden = 256
@@ -68,7 +68,7 @@ def compute_embeddings(family, baseline, seed):
 
     # Compute complex embeddings
     with torch.no_grad():
-        embeddings = list()        
+        embeddings = list()
         for batch in data_loader:
             batch.nodes.x = batch.nodes.x.double()
             batch.edges.x = batch.edges.x.double()
@@ -81,7 +81,7 @@ def compute_embeddings(family, baseline, seed):
     return embeddings
 
 if __name__ == "__main__":
-    
+
     # Standard args
     passed_args = sys.argv[1:]
     baseline = (passed_args[0].lower() == 'true')

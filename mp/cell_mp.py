@@ -27,15 +27,15 @@ THE SOFTWARE.
 
 from inspect import Parameter
 from typing import List, Optional, Set
-from torch_geometric.typing import Adj, Size
 
 import torch
 from torch import Tensor
 from torch_sparse import SparseTensor
 from torch_scatter import gather_csr, scatter, segment_csr
-
 from torch_geometric.nn.conv.utils.helpers import expand_left
-from mp.cell_mp_inspector import CellularInspector
+from torch_geometric.typing import Adj, Size
+
+from cwn.mp.cell_mp_inspector import CellularInspector
 
 
 class CochainMessagePassing(torch.nn.Module):
@@ -348,7 +348,7 @@ class CochainMessagePassing(torch.nn.Module):
             msg_kwargs = self.inspector.distribute(f'message_{adjacency}', coll_dict)
             message = self.get_msg_func(adjacency)
             out = message(**msg_kwargs)
-            
+
             # import pdb; pdb.set_trace()
             aggr_kwargs = self.inspector.distribute(f'aggregate_{adjacency}', coll_dict)
             aggregate = self.get_agg_func(adjacency)

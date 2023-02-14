@@ -28,9 +28,10 @@ import copy
 
 from torch import Tensor
 from torch_sparse import SparseTensor
-from mp.cell_mp import CochainMessagePassingParams
 from torch_geometric.typing import Adj
 from typing import List
+
+from cwn.mp.cell_mp import CochainMessagePassingParams
 
 
 class Cochain(object):
@@ -98,7 +99,7 @@ class Cochain(object):
         This field should not have a setter. The dimension of a cochain cannot be changed.
         """
         return self.__dim__
-    
+
     @property
     def x(self):
         """Returns the vector values (features) associated with the cells."""
@@ -167,7 +168,7 @@ class Cochain(object):
             inc = 0
 
         return inc
-    
+
     def __call__(self, *keys):
         """
         Iterates over all attributes :obj:`*keys` in the cochain, yielding
@@ -230,7 +231,7 @@ class Cochain(object):
         """Sets the number of cells in the lower-dimensional cochain of co-dimension 1."""
         # TODO: Add more checks here
         self.__num_cells_down__ = num_cells_down
-        
+
     @property
     def num_features(self):
         """Returns the number of features per cell in the cochain."""
@@ -287,7 +288,7 @@ class Cochain(object):
             k: v.clone() if torch.is_tensor(v) else copy.deepcopy(v)
             for k, v in self.__dict__.items()
         })
-    
+
     @property
     def mapping(self):
         return self.__mapping
@@ -385,10 +386,10 @@ class CochainBatch(Cochain):
                     elif isinstance(item, SparseTensor):
                         size = torch.tensor(item.sizes())[torch.tensor(cat_dim)]
                         device = item.device()
-                    
+
                     # TODO: do we really need slices, and, are we managing them correctly?
                     slices[key].append(size + slices[key][-1])
-                    
+
                     if key in follow_batch:
                         if isinstance(size, Tensor):
                             for j, size in enumerate(size.tolist()):
@@ -403,7 +404,7 @@ class CochainBatch(Cochain):
                             batch[tmp].append(
                                 torch.full((size, ), i, dtype=torch.long,
                                            device=device))
-                    
+
                 inc = data.__inc__(key, item)
                 if isinstance(inc, (tuple, list)):
                     inc = torch.tensor(inc)
@@ -511,10 +512,10 @@ class Complex(object):
         self.two_cells = cochains[2] if dimension >= 2 else None
 
         self.y = y
-        
+
         self._consolidate()
         return
-    
+
     def _consolidate(self):
         for dim in range(self.dimension+1):
             cochain = self.cochains[dim]
@@ -535,7 +536,7 @@ class Complex(object):
                     assert cochain.num_cells_down == num_cells_down
                 else:
                     cochain.num_cells_down = num_cells_down
-                    
+
     def to(self, device, **kwargs):
         """Performs tensor dtype and/or device conversion to cochains and label y, if set."""
         # TODO: handle device conversion for specific attributes via `*keys` parameter
@@ -646,14 +647,14 @@ class Complex(object):
         assert (self.dimension + 1) >= len(xs)
         for i, x in enumerate(xs):
             self.cochains[i].x = x
-            
+
     @property
     def keys(self):
         """Returns all names of complex attributes."""
         keys = [key for key in self.__dict__.keys() if self[key] is not None]
         keys = [key for key in keys if key[:2] != '__' and key[-2:] != '__']
         return keys
-    
+
     def __getitem__(self, key):
         """Gets the data of the attribute :obj:`key`."""
         return getattr(self, key, None)
@@ -661,7 +662,7 @@ class Complex(object):
     def __setitem__(self, key, value):
         """Sets the attribute :obj:`key` to :obj:`value`."""
         setattr(self, key, value)
-    
+
     def __contains__(self, key):
         """Returns :obj:`True`, if the attribute :obj:`key` is present in the data."""
         return key in self.keys

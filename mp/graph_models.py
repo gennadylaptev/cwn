@@ -27,14 +27,15 @@ import torch
 import torch.nn.functional as F
 from torch.nn import Linear, Sequential, BatchNorm1d as BN
 from torch_geometric.nn import GINConv, JumpingKnowledge
-from mp.nn import get_nonlinearity, get_pooling_fn
+
+from cwn.mp.nn import get_nonlinearity, get_pooling_fn
 
 
 class GIN0(torch.nn.Module):
     def __init__(self, num_features, num_layers, hidden, num_classes, readout='sum',
                  dropout_rate=0.5, nonlinearity='relu'):
         super(GIN0, self).__init__()
-        self.pooling_fn = get_pooling_fn(readout) 
+        self.pooling_fn = get_pooling_fn(readout)
         self.nonlinearity = nonlinearity
         self.dropout_rate = dropout_rate
         conv_nonlinearity = get_nonlinearity(nonlinearity, return_module=True)
@@ -89,7 +90,7 @@ class GIN0WithJK(torch.nn.Module):
     def __init__(self, num_features, num_layers, hidden, num_classes, mode='cat', readout='sum',
                  dropout_rate=0.5, nonlinearity='relu'):
         super(GIN0WithJK, self).__init__()
-        self.pooling_fn = get_pooling_fn(readout) 
+        self.pooling_fn = get_pooling_fn(readout)
         self.dropout_rate = dropout_rate
         self.nonlinearity = nonlinearity
         conv_nonlinearity = get_nonlinearity(nonlinearity, return_module=True)
@@ -152,7 +153,7 @@ class GIN(torch.nn.Module):
     def __init__(self, num_features, num_layers, hidden, num_classes, readout='sum',
                  dropout_rate=0.5, nonlinearity='relu'):
         super(GIN, self).__init__()
-        self.pooling_fn = get_pooling_fn(readout) 
+        self.pooling_fn = get_pooling_fn(readout)
         self.dropout_rate = dropout_rate
         self.nonlinearity = nonlinearity
         conv_nonlinearity = get_nonlinearity(nonlinearity, return_module=True)
@@ -207,7 +208,7 @@ class GINWithJK(torch.nn.Module):
     def __init__(self, num_features, num_layers, hidden, num_classes, mode='cat', readout='sum',
                  dropout_rate=0.5, nonlinearity='relu'):
         super(GINWithJK, self).__init__()
-        self.pooling_fn = get_pooling_fn(readout) 
+        self.pooling_fn = get_pooling_fn(readout)
         self.dropout_rate = dropout_rate
         self.nonlinearity = nonlinearity
         conv_nonlinearity = get_nonlinearity(nonlinearity, return_module=True)

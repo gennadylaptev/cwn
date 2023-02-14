@@ -1,6 +1,6 @@
 import torch
 
-from data.complex import Cochain, Complex
+from cwn.data.complex import Cochain, Complex
 from torch_geometric.data import Data
 
 
@@ -97,7 +97,7 @@ def get_house_complex():
     t_x = torch.tensor([[1]], dtype=torch.float)
     yt = torch.tensor([2], dtype=torch.long)
     t_cochain = Cochain(dim=2, x=t_x, y=yt, boundary_index=t_boundary_index)
-    
+
     y = torch.LongTensor([v_x.shape[0]])
     return Complex(v_cochain, e_cochain, t_cochain, y=y)
 
@@ -105,28 +105,28 @@ def get_house_complex():
 def get_bridged_complex():
     """
     Returns the `bridged graph` below with dummy features.
-    The `bridged graph` (0-1-4-3, 1-2-3-4, 0-1-2-3 are filled rings): 
-      
+    The `bridged graph` (0-1-4-3, 1-2-3-4, 0-1-2-3 are filled rings):
+
      3---2
-     |\  |  
+     |\  |
      | 4 |
      |  \|
      0---1
 
      .-2-.
-     |4  |  
+     |4  |
      3 . 1
      |  5|
      .-0-.
 
      .---.
-     |\1 |  
+     |\1 |
      | . |
      | 0\|
      .---.
-     
+
      .---.
-     |   |  
+     |   |
      | 2 |
      |   |
      .---.
@@ -146,17 +146,17 @@ def get_bridged_complex():
     e_up_index = torch.tensor(     [[0, 1, 0, 2, 0, 3, 0, 3, 0, 4, 0, 5, 1, 2, 1, 2, 1, 3, 1, 4, 1, 5, 2, 3, 2, 4, 2, 5, 3, 4, 3, 5, 4, 5, 4, 5],
                                     [1, 0, 2, 0, 3, 0, 3, 0, 4, 0, 5, 0, 2, 1, 2, 1, 3, 1, 4, 1, 5, 1, 3, 2, 4, 2, 5, 2, 4, 3, 5, 3, 5, 4, 5, 4]], dtype=torch.long)
     e_shared_coboundaries = torch.tensor([2, 2, 2, 2, 0, 0, 2, 2, 0, 0, 0, 0, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1], dtype=torch.long)
-    
+
     e_down_index = torch.tensor( [[0, 1, 0, 3, 0, 5, 1, 2, 1, 5, 2, 3, 2, 4, 3, 4, 4, 5],
                                   [1, 0, 3, 0, 5, 0, 2, 1, 5, 1, 3, 2, 4, 2, 4, 3, 5, 4]], dtype=torch.long)
     e_shared_boundaries = torch.tensor([1, 1, 0, 0, 1, 1, 2, 2, 1, 1, 3, 3, 3, 3, 3, 3, 4, 4], dtype=torch.long)
-    
+
     e_x = torch.tensor([[1], [2], [3], [4], [5], [6]], dtype=torch.float)
     ye = torch.tensor([1, 1, 1, 1, 1, 1], dtype=torch.long)
     e_cochain = Cochain(dim=1, x=e_x, upper_index=e_up_index, lower_index=e_down_index,
         shared_coboundaries=e_shared_coboundaries, shared_boundaries=e_shared_boundaries,
         boundary_index=e_boundary_index, y=ye)
-    
+
     t_boundaries = [[0, 3, 4, 5], [1, 2, 4, 5], [0, 1, 2, 3]]
     t_boundary_index = torch.stack([
         torch.LongTensor(t_boundaries).view(-1),
@@ -240,9 +240,9 @@ def get_square_complex():
     ye = torch.tensor([1, 1, 1, 1], dtype=torch.long)
     e_cochain = Cochain(dim=1, x=e_x, lower_index=e_down_index, shared_boundaries=e_shared_boundaries, y=ye,
         boundary_index=e_boundary_index)
-    
+
     y = torch.LongTensor([v_x.shape[0]])
-    
+
     return Complex(v_cochain, e_cochain, y=y)
 
 
@@ -281,7 +281,7 @@ def get_square_dot_complex():
     ye = torch.tensor([1, 1, 1, 1], dtype=torch.long)
     e_cochain = Cochain(dim=1, x=e_x, lower_index=e_down_index, shared_boundaries=e_shared_boundaries, y=ye,
         boundary_index=e_boundary_index)
-    
+
     y = torch.LongTensor([v_x.shape[0]])
 
     return Complex(v_cochain, e_cochain, y=y)
@@ -303,7 +303,7 @@ def get_kite_complex():
       .---.---.
      /0\1/
     .---.
-    
+
     """
     v_up_index = torch.tensor([[0, 1, 0, 2, 1, 2, 1, 3, 2, 3, 3, 4],
                                [1, 0, 2, 0, 2, 1, 3, 1, 3, 2, 4, 3]], dtype=torch.long)
@@ -354,7 +354,7 @@ def get_pyramid_complex():
     """
     Returns the `pyramid` below with dummy features.
     The `pyramid` (corresponds to a 4-clique):
-    
+
        3
       /|\
      /_2_\
@@ -364,7 +364,7 @@ def get_pyramid_complex():
      5 4 3
       2.1
     .  0  .
-    
+
        3
       / \
      /   \
@@ -372,7 +372,7 @@ def get_pyramid_complex():
    / \   / \
   /   \ /   \
  3-----0-----3
-    
+
        .
       / \
      4   3
@@ -380,7 +380,7 @@ def get_pyramid_complex():
    / 2   0 \
   4   \ /   3
  .--5--.--5--.
-    
+
        3
       / \
      / 2 \
@@ -388,12 +388,12 @@ def get_pyramid_complex():
    / \ 0 / \
   / 3 \ / 1 \
  3-----0-----3
- 
+
        .
       /|\
      /_0_\
     .-----.
-  
+
   """
     v_up_index = torch.tensor([[0, 1, 0, 2, 0, 3, 1, 2, 1, 3, 2, 3],
                                [1, 0, 2, 0, 3, 0, 2, 1, 3, 1, 3, 2]], dtype=torch.long)
@@ -451,7 +451,7 @@ def get_pyramid_complex():
     p_cochain = Cochain(dim=3, x=p_x, y=yp, boundary_index=p_boundary_index)
 
     y = torch.LongTensor([v_x.shape[0]])
-        
+
     return Complex(v_cochain, e_cochain, t_cochain, p_cochain, y=y)
 
 
@@ -502,7 +502,7 @@ def get_filled_square_complex():
     c_x = torch.tensor([[1]], dtype=torch.float)
     yc = torch.tensor([2], dtype=torch.long)
     c_cochain = Cochain(dim=2, x=c_x, y=yc, boundary_index=c_boundary_index)
-    
+
     y = torch.LongTensor([v_x.shape[0]])
 
     return Complex(v_cochain, e_cochain, c_cochain, y=y)
@@ -570,7 +570,7 @@ def get_molecular_complex():
     yc = torch.tensor([2, 2], dtype=torch.long)
     c_cochain = Cochain(dim=2, x=c_x, y=yc, boundary_index=c_boundary_index, lower_index=c_down_index,
         shared_boundaries=c_shared_boundaries)
-    
+
     y = torch.LongTensor([v_x.shape[0]])
 
     return Complex(v_cochain, e_cochain, c_cochain, y=y)

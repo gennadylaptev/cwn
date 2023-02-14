@@ -4,9 +4,9 @@ import pickle
 import numpy as np
 from definitions import ROOT_DIR
 
-from data.tu_utils import load_data, S2V_to_PyG, get_fold_indices
-from data.utils import convert_graph_dataset_with_gudhi, convert_graph_dataset_with_rings
-from data.datasets import InMemoryComplexDataset
+from cwn.data.tu_utils import load_data, S2V_to_PyG, get_fold_indices
+from cwn.data.utils import convert_graph_dataset_with_gudhi, convert_graph_dataset_with_rings
+from cwn.data.datasets import InMemoryComplexDataset
 
 
 def load_tu_graph_dataset(name, root=os.path.join(ROOT_DIR, 'datasets'), degree_as_tag=False, fold=0, seed=0):
@@ -21,7 +21,7 @@ def load_tu_graph_dataset(name, root=os.path.join(ROOT_DIR, 'datasets'), degree_
         graph_list = [S2V_to_PyG(datum) for datum in data]
         with open(load_from, 'wb') as handle:
             pickle.dump(graph_list, handle)
-    train_filename = os.path.join(raw_dir, '10fold_idx', 'train_idx-{}.txt'.format(fold + 1))  
+    train_filename = os.path.join(raw_dir, '10fold_idx', 'train_idx-{}.txt'.format(fold + 1))
     test_filename = os.path.join(raw_dir, '10fold_idx', 'test_idx-{}.txt'.format(fold + 1))
     if os.path.isfile(train_filename) and os.path.isfile(test_filename):
         # NB: we consider the loaded test indices as val_ids ones and set test_ids to None
@@ -51,10 +51,10 @@ class TUDataset(InMemoryComplexDataset):
             init_method=init_method, include_down_adj=include_down_adj, cellular=cellular)
 
         self.data, self.slices = torch.load(self.processed_paths[0])
-            
+
         self.fold = fold
         self.seed = seed
-        train_filename = os.path.join(self.raw_dir, '10fold_idx', 'train_idx-{}.txt'.format(fold + 1))  
+        train_filename = os.path.join(self.raw_dir, '10fold_idx', 'train_idx-{}.txt'.format(fold + 1))
         test_filename = os.path.join(self.raw_dir, '10fold_idx', 'test_idx-{}.txt'.format(fold + 1))
         if os.path.isfile(train_filename) and os.path.isfile(test_filename):
             # NB: we consider the loaded test indices as val_ids ones and set test_ids to None
@@ -80,17 +80,17 @@ class TUDataset(InMemoryComplexDataset):
         suffix = f"_{self._max_ring_size}rings" if self._cellular else ""
         suffix += f"_down_adj" if self.include_down_adj else ""
         return directory + suffix
-            
+
     @property
     def processed_file_names(self):
         return ['{}_complex_list.pt'.format(self.name)]
-    
+
     @property
     def raw_file_names(self):
         # The processed graph files are our raw files.
-        # They are obtained when running the initial data conversion S2V_to_PyG. 
+        # They are obtained when running the initial data conversion S2V_to_PyG.
         return ['{}_graph_list_degree_as_tag_{}.pkl'.format(self.name, self.degree_as_tag)]
-    
+
     def download(self):
         # This will process the raw data into a list of PyG Data objs.
         data, num_classes = load_data(self.raw_dir, self.name, self.degree_as_tag)
@@ -99,11 +99,11 @@ class TUDataset(InMemoryComplexDataset):
         graph_list = [S2V_to_PyG(datum) for datum in data]
         with open(self.raw_paths[0], 'wb') as handle:
             pickle.dump(graph_list, handle)
-        
+
     def process(self):
         with open(self.raw_paths[0], 'rb') as handle:
-            graph_list = pickle.load(handle)        
-        
+            graph_list = pickle.load(handle)
+
         if self._cellular:
             print("Converting the dataset accounting for rings...")
             complexes, _, _ = convert_graph_dataset_with_rings(graph_list, max_ring_size=self._max_ring_size,

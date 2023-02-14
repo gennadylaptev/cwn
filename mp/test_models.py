@@ -2,10 +2,10 @@ import torch
 import pytest
 import itertools
 
-from data.complex import ComplexBatch
-from data.dummy_complexes import get_testing_complex_list
-from mp.models import CIN0, EdgeCIN0, SparseCIN
-from data.data_loading import DataLoader, load_dataset
+from cwn.data.complex import ComplexBatch
+from cwn.data.dummy_complexes import get_testing_complex_list
+from cwn.mp.models import CIN0, EdgeCIN0, SparseCIN
+from cwn.data.data_loading import DataLoader, load_dataset
 
 
 def test_cin_model_with_batching():

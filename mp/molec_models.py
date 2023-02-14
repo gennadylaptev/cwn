@@ -3,10 +3,11 @@ import torch.nn.functional as F
 
 from torch.nn import Linear, Embedding, Sequential, BatchNorm1d as BN
 from torch_geometric.nn import JumpingKnowledge, GINEConv
-from mp.layers import InitReduceConv, EmbedVEWithReduce, OGBEmbedVEWithReduce, SparseCINConv
 from ogb.graphproppred.mol_encoder import AtomEncoder, BondEncoder
-from data.complex import ComplexBatch
-from mp.nn import pool_complex, get_pooling_fn, get_nonlinearity, get_graph_norm
+
+from cwn.data.complex import ComplexBatch
+from cwn.mp.nn import pool_complex, get_pooling_fn, get_nonlinearity, get_graph_norm
+from cwn.mp.layers import InitReduceConv, EmbedVEWithReduce, OGBEmbedVEWithReduce, SparseCINConv
 
 
 class EmbedSparseCIN(torch.nn.Module):
@@ -133,7 +134,7 @@ class EmbedSparseCIN(torch.nn.Module):
         if include_partial:
             for k in range(len(xs)):
                 res[f"pool_{k}"] = xs[k]
-        
+
         new_xs = []
         for i, x in enumerate(xs):
             if self.apply_dropout_before == 'lin1':
@@ -141,7 +142,7 @@ class EmbedSparseCIN(torch.nn.Module):
             new_xs.append(act(self.lin1s[self.readout_dims[i]](x)))
 
         x = torch.stack(new_xs, dim=0)
-        
+
         if self.apply_dropout_before == 'final_readout':
             x = F.dropout(x, p=self.dropout_rate, training=self.training)
         if self.final_readout == 'mean':
@@ -173,7 +174,7 @@ class OGBEmbedSparseCIN(torch.nn.Module):
     https://github.com/rusty1s/pytorch_geometric/blob/master/benchmark/kernel/gin.py
     """
 
-    def __init__(self, out_size, num_layers, hidden, dropout_rate: float = 0.5, 
+    def __init__(self, out_size, num_layers, hidden, dropout_rate: float = 0.5,
                  indropout_rate: float = 0.0, max_dim: int = 2, jump_mode=None,
                  nonlinearity='relu', readout='sum', train_eps=False, final_hidden_multiplier: int = 2,
                  readout_dims=(0, 1, 2), final_readout='sum', apply_dropout_before='lin2',
@@ -288,7 +289,7 @@ class OGBEmbedSparseCIN(torch.nn.Module):
         if include_partial:
             for k in range(len(xs)):
                 res[f"pool_{k}"] = xs[k]
-        
+
         new_xs = []
         for i, x in enumerate(xs):
             if self.apply_dropout_before == 'lin1':
@@ -296,7 +297,7 @@ class OGBEmbedSparseCIN(torch.nn.Module):
             new_xs.append(act(self.lin1s[self.readout_dims[i]](x)))
 
         x = torch.stack(new_xs, dim=0)
-        
+
         if self.apply_dropout_before == 'final_readout':
             x = F.dropout(x, p=self.dropout_rate, training=self.training)
         if self.final_readout == 'mean':

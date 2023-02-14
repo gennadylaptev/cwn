@@ -3,8 +3,8 @@ import os
 import copy
 import time
 import numpy as np
-from exp.parser import get_parser
-from exp.run_exp import main
+from cwn.exp.parser import get_parser
+from cwn.exp.run_exp import main
 
 # python3 -m exp.run_tu_exp --dataset IMDBBINARY --model cin --drop_rate 0.0 --lr 0.0001 --max_dim 2 --emb_dim 32 --dump_curves --epochs 30 --num_layers 1 --lr_scheduler StepLR --lr_scheduler_decay_steps 5
 
@@ -16,10 +16,10 @@ def print_summary(summary):
     for k, v in summary.items():
         msg += f'Fold {k:1d}:  {v:.3f}\n'
     print(msg)
-    
-    
+
+
 def exp_main(passed_args):
-    
+
     parser = get_parser()
     args = parser.parse_args(copy.copy(passed_args))
 
@@ -30,7 +30,7 @@ def exp_main(passed_args):
         parsed_args = parser.parse_args(current_args)
         curves = main(parsed_args)
         results.append(curves)
-        
+
     # aggregate results
     val_curves = np.asarray([curves['val'] for curves in results])
     avg_val_curve = val_curves.mean(axis=0)
@@ -65,7 +65,7 @@ def exp_main(passed_args):
         f'Best epoch:     {best_index}\n'
         '-------------------------------\n')
     print(msg)
-    
+
     # additionally write msg and configuration on file
     msg += str(args)
     filename = os.path.join(args.result_folder, f'{args.dataset}-{args.exp_name}/result.txt')
@@ -74,7 +74,7 @@ def exp_main(passed_args):
         handle.write(msg)
 
 if __name__ == "__main__":
-    
+
     # standard args
     passed_args = sys.argv[1:]
     assert 'fold' not in passed_args

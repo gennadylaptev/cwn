@@ -31,11 +31,12 @@ from torch_geometric.data import Data, Batch
 from torch._six import container_abcs, string_classes, int_classes
 
 from definitions import ROOT_DIR
-from data.complex import Cochain, CochainBatch, Complex, ComplexBatch
-from data.datasets import (
+
+from cwn.data.complex import Cochain, CochainBatch, Complex, ComplexBatch
+from cwn.data.datasets import (
     load_sr_graph_dataset, load_tu_graph_dataset, load_zinc_graph_dataset, load_ogb_graph_dataset,
     load_ring_transfer_dataset, load_ring_lookup_dataset)
-from data.datasets import (
+from cwn.data.datasets import (
     SRDataset, ClusterDataset, TUDataset, ComplexDataset, FlowDataset,
     OceanDataset, ZincDataset, CSLDataset, OGBDataset, RingTransferDataset, RingLookupDataset,
     DummyDataset, DummyMolecularDataset)
@@ -124,7 +125,7 @@ def load_dataset(name, root=os.path.join(ROOT_DIR, 'datasets'), max_dim=2, fold=
             fold=fold, degree_as_tag=True, init_method=init_method, max_ring_size=kwargs.get('max_ring_size', None))
     elif name == 'IMDBMULTI':
         dataset = TUDataset(os.path.join(root, name), name, max_dim=max_dim, num_classes=3,
-            fold=fold, degree_as_tag=True, init_method=init_method, max_ring_size=kwargs.get('max_ring_size', None)) 
+            fold=fold, degree_as_tag=True, init_method=init_method, max_ring_size=kwargs.get('max_ring_size', None))
     elif name == 'REDDITBINARY':
         dataset = TUDataset(os.path.join(root, name), name, max_dim=max_dim, num_classes=2,
             fold=fold, degree_as_tag=False, init_method=init_method, max_ring_size=kwargs.get('max_ring_size', None))

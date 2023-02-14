@@ -1,14 +1,14 @@
 import pytest
 import torch
 
-from data.helper_test import check_edge_index_are_the_same, check_edge_attr_are_the_same
+from cwn.data.helper_test import check_edge_index_are_the_same, check_edge_attr_are_the_same
 
-from mp.cell_mp import CochainMessagePassing
+from cwn.mp.cell_mp import CochainMessagePassing
 from torch_geometric.nn.conv import MessagePassing
 from data.dummy_complexes import (get_square_dot_complex, get_house_complex,
-                                  get_colon_complex, get_fullstop_complex, 
+                                  get_colon_complex, get_fullstop_complex,
                                   get_bridged_complex, convert_to_graph)
-from data.utils import compute_ring_2complex
+from cwn.data.utils import compute_ring_2complex
 
 def test_edge_propagate_in_cmp():
     """We build a graph in the shape of a house (a triangle on top of a square)
@@ -165,7 +165,7 @@ def test_cmp_messaging_with_two_isolated_nodes_only():
 
     mp = MessagePassing()
     mp_out = mp.propagate(edge_index=empty_edge_index, x=params.x)
-    
+
     # This confirms pyG returns a zero message when edge_index is empty
     assert torch.equal(mp_out, torch.zeros_like(mp_out))
 
@@ -190,7 +190,7 @@ def test_cmp_messaging_with_replicated_adjs():
     check_edge_index_are_the_same(bridged_complex_from_graph.two_cells.lower_index, bridged_complex.two_cells.lower_index)
     check_edge_attr_are_the_same(bridged_complex.cochains[1].boundary_index, bridged_complex.cochains[1].x, bridged_graph.edge_index, bridged_graph.edge_attr)
     check_edge_attr_are_the_same(bridged_complex_from_graph.cochains[1].boundary_index, bridged_complex_from_graph.cochains[1].x, bridged_graph.edge_index, bridged_graph.edge_attr)
-    
+
     # verify up-messaging with multiple shared coboundaries
     e = bridged_complex.get_cochain_params(dim=1)
     cmp = CochainMessagePassing(up_msg_size=1, down_msg_size=1)
@@ -207,7 +207,7 @@ def test_cmp_messaging_with_replicated_adjs():
                                       [1+4+5+2+3+5]], # edge 5
                                       dtype=torch.float)
     assert torch.equal(e_up_msg, expected_e_up_msg)
-    
+
     # same but start from graph instead
     e = bridged_complex_from_graph.get_cochain_params(dim=1)
     cmp = CochainMessagePassing(up_msg_size=1, down_msg_size=1)
@@ -216,7 +216,7 @@ def test_cmp_messaging_with_replicated_adjs():
                                                up_attr=e.kwargs['up_attr'],
                                                down_attr=e.kwargs['down_attr'],
                                                boundary_attr=e.kwargs['boundary_attr'])
-    
+
     expected_e_up_msg = torch.tensor([[4+5+6+2+3+4],        # edge 0-1 (0)
                                       [1+5+6+1+2+3],        # edge 0-3 (3)
                                       [3+5+6+1+3+4],        # edge 1-2 (1)
@@ -225,7 +225,7 @@ def test_cmp_messaging_with_replicated_adjs():
                                       [1+4+6+2+3+6]],       # edge 3-4 (4)
                                       dtype=torch.float)
     assert torch.equal(e_up_msg, expected_e_up_msg)
-    
+
     # verify down-messaging with multiple shared boundaries
     t = bridged_complex.get_cochain_params(dim=2)
     cmp = CochainMessagePassing(up_msg_size=1, down_msg_size=1)
@@ -239,13 +239,13 @@ def test_cmp_messaging_with_replicated_adjs():
                                         [1+1+2+2]],   # ring 2
                                       dtype=torch.float)
     assert torch.equal(t_down_msg, expected_t_down_msg)
-    
+
     expected_t_boundary_msg = torch.tensor([[1+6+5+4],    # ring 0
                                         [2+3+5+6],    # ring 1
                                         [1+2+3+4]],   # ring 2
                                       dtype=torch.float)
     assert torch.equal(t_boundary_msg, expected_t_boundary_msg)
-    
+
     # same but start from graph instead
     t = bridged_complex_from_graph.get_cochain_params(dim=2)
     cmp = CochainMessagePassing(up_msg_size=1, down_msg_size=1)
@@ -262,7 +262,7 @@ def test_cmp_messaging_with_replicated_adjs():
                                         [t0_x + t0_x + t2_x + t2_x]],  # ring 1-2-3-4 (1)
                                       dtype=torch.float)
     assert torch.equal(t_down_msg, expected_t_down_msg)
-    
+
     expected_t_boundary_msg = torch.tensor([[1+6+5+4],        # ring 0
                                         [1+2+3+4],        # ring 2
                                         [2+3+5+6]],       # ring 1

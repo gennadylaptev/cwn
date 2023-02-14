@@ -1,10 +1,11 @@
 import torch
 
-from mp.layers import SparseCINConv
-from mp.nn import get_nonlinearity, get_graph_norm
-from data.complex import ComplexBatch
 from torch.nn import Linear, Sequential
 from torch_geometric.nn import GINConv
+
+from cwn.mp.layers import SparseCINConv
+from cwn.mp.nn import get_nonlinearity, get_graph_norm
+from cwn.data.complex import ComplexBatch
 
 
 class RingSparseCIN(torch.nn.Module):

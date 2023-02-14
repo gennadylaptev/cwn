@@ -2,13 +2,14 @@ import torch
 
 from typing import Callable, Optional
 from torch import Tensor
-from mp.cell_mp import CochainMessagePassing, CochainMessagePassingParams
 from torch_geometric.nn.inits import reset
 from torch.nn import Linear, Sequential, BatchNorm1d as BN, Identity
-from data.complex import Cochain
 from torch_scatter import scatter
 from ogb.graphproppred.mol_encoder import AtomEncoder, BondEncoder
 from abc import ABC, abstractmethod
+
+from cwn.data.complex import Cochain
+from cwn.mp.cell_mp import CochainMessagePassing, CochainMessagePassingParams
 
 
 class DummyCochainMessagePassing(CochainMessagePassing):
@@ -49,7 +50,7 @@ class DummyCellularMessagePassing(torch.nn.Module):
             mp = DummyCochainMessagePassing(input_dim, input_dim, boundary_msg_size=input_dim,
                                           use_boundary_msg=use_boundary_msg, use_down_msg=use_down_msg)
             self.mp_levels.append(mp)
-    
+
     def forward(self, *cochain_params: CochainMessagePassingParams):
         assert len(cochain_params) <= self.max_dim+1
 
@@ -209,10 +210,10 @@ class SparseCINCochainConv(CochainMessagePassing):
 
     def message_up(self, up_x_j: Tensor, up_attr: Tensor) -> Tensor:
         return self.msg_up_nn((up_x_j, up_attr))
-    
+
     def message_boundary(self, boundary_x_j: Tensor) -> Tensor:
         return self.msg_boundaries_nn(boundary_x_j)
-    
+
 
 class Catter(torch.nn.Module):
     def __init__(self):
@@ -220,8 +221,8 @@ class Catter(torch.nn.Module):
 
     def forward(self, x):
         return torch.cat(x, dim=-1)
-    
-    
+
+
 class SparseCINConv(torch.nn.Module):
     """A cellular version of GIN which performs message passing from  cellular upper
     neighbors and boundaries, but not from lower neighbors (hence why "Sparse")
@@ -355,9 +356,9 @@ class InitReduceConv(torch.nn.Module):
         out_size = boundary_index[1, :].max() + 1
         return scatter(features, boundary_index[1], dim=0, dim_size=out_size, reduce=self.reduce)
 
-    
+
 class AbstractEmbedVEWithReduce(torch.nn.Module, ABC):
-    
+
     def __init__(self,
                  v_embed_layer: Callable,
                  e_embed_layer: Optional[Callable],
@@ -373,15 +374,15 @@ class AbstractEmbedVEWithReduce(torch.nn.Module, ABC):
         self.v_embed_layer = v_embed_layer
         self.e_embed_layer = e_embed_layer
         self.init_reduce = init_reduce
-    
+
     @abstractmethod
     def _prepare_v_inputs(self, v_params):
         pass
-    
+
     @abstractmethod
     def _prepare_e_inputs(self, e_params):
         pass
-    
+
     def forward(self, *cochain_params: CochainMessagePassingParams):
         assert 1 <= len(cochain_params) <= 3
         v_params = cochain_params[0]
@@ -410,12 +411,12 @@ class AbstractEmbedVEWithReduce(torch.nn.Module, ABC):
             out.append(cx)
 
         return out
-    
+
     def reset_parameters(self):
         reset(self.v_embed_layer)
         reset(self.e_embed_layer)
 
-    
+
 class EmbedVEWithReduce(AbstractEmbedVEWithReduce):
 
     def __init__(self,
@@ -423,14 +424,14 @@ class EmbedVEWithReduce(AbstractEmbedVEWithReduce):
                  e_embed_layer: Optional[torch.nn.Embedding],
                  init_reduce: InitReduceConv):
         super(EmbedVEWithReduce, self).__init__(v_embed_layer, e_embed_layer, init_reduce)
-        
+
     def _prepare_v_inputs(self, v_params):
         assert v_params.x is not None
         assert v_params.x.dim() == 2
         assert v_params.x.size(1) == 1
         # The embedding layer expects integers so we convert the tensor to int.
         return v_params.x.squeeze(1).to(dtype=torch.long)
-    
+
     def _prepare_e_inputs(self, e_params):
         assert self.e_embed_layer is not None
         assert e_params.x.dim() == 2
@@ -440,7 +441,7 @@ class EmbedVEWithReduce(AbstractEmbedVEWithReduce):
 
 
 class OGBEmbedVEWithReduce(AbstractEmbedVEWithReduce):
-    
+
     def __init__(self,
                  v_embed_layer: AtomEncoder,
                  e_embed_layer: Optional[BondEncoder],
@@ -453,7 +454,7 @@ class OGBEmbedVEWithReduce(AbstractEmbedVEWithReduce):
         # Inputs in ogbg-mol* datasets are already long.
         # This is to test the layer with other datasets.
         return v_params.x.to(dtype=torch.long)
-    
+
     def _prepare_e_inputs(self, e_params):
         assert self.e_embed_layer is not None
         assert e_params.x.dim() == 2

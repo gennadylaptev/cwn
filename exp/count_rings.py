@@ -3,9 +3,9 @@ import numpy as np
 import argparse
 import time
 
-from data.parallel import ProgressParallel
-from data.data_loading import load_graph_dataset
-from data.utils import get_rings
+from cwn.data.parallel import ProgressParallel
+from cwn.data.data_loading import load_graph_dataset
+from cwn.data.utils import get_rings
 from joblib import delayed
 
 parser = argparse.ArgumentParser(description='Ring counting experiment.')

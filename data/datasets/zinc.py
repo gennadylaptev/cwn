@@ -1,8 +1,8 @@
 import torch
 import os.path as osp
 
-from data.utils import convert_graph_dataset_with_rings
-from data.datasets import InMemoryComplexDataset
+from cwn.data.utils import convert_graph_dataset_with_rings
+from cwn.data.datasets import InMemoryComplexDataset
 from torch_geometric.datasets import ZINC
 
 
@@ -93,7 +93,7 @@ class ZincDataset(InMemoryComplexDataset):
         path = self.processed_paths[0]
         print(f'Saving processed dataset in {path}....')
         torch.save(self.collate(data_list, 2), path)
-        
+
         path = self.processed_paths[1]
         print(f'Saving idx in {path}....')
         torch.save(idx, path)

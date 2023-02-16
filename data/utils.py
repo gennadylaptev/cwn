@@ -283,8 +283,12 @@ def compute_clique_complex_with_gudhi(
     return Complex(*cochains, y=complex_y, dimension=complex_dim)
 
 
-def convert_graph_dataset_with_gudhi(dataset, expansion_dim: int, include_down_adj=True,
-                                     init_method: str = 'sum'):
+def convert_graph_dataset_with_gudhi(
+    dataset,
+    expansion_dim: int,
+    include_down_adj=True,
+    init_method: str = 'sum',
+):
     # TODO(Cris): Add parallelism to this code like in the cell complex conversion code.
     dimension = -1
     complexes = []
@@ -465,6 +469,7 @@ def compute_ring_2complex(
     init_method: str = 'sum',
     init_edges=True,
     init_rings=False,
+    ignore_edge_attr=False,
     filter_ring_thr: Optional[float] = None,
     top_pt_rings: Optional[float] = None,
 ) -> Complex:
@@ -522,7 +527,7 @@ def compute_ring_2complex(
         xs[2] = constructed_features[2]
 
     if init_edges and simplex_tree.dimension() >= 1:
-        if edge_attr is None:
+        if edge_attr is None or ignore_edge_attr:
             xs[1] = constructed_features[1]
         # If we have edge-features we simply use them for 1-cells
         else:
@@ -573,6 +578,7 @@ def convert_graph_dataset_with_rings(
     init_rings=False,
     filter_ring_thr: Optional[float] = None,
     top_pt_rings: Optional[float] = None,
+    ignore_edge_attr=False,
     n_jobs=1,
 ):
     dimension = -1
@@ -599,6 +605,7 @@ def convert_graph_dataset_with_rings(
             init_rings=init_rings,
             filter_ring_thr=filter_ring_thr,
             top_pt_rings=top_pt_rings,
+            ignore_edge_attr=ignore_edge_attr,
         ) for data in dataset)
 
     # NB: here we perform additional checks to verify the order of complexes

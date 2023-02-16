@@ -28,9 +28,10 @@ import torch
 from torch.utils.data.dataloader import default_collate
 
 from torch_geometric.data import Data, Batch
-from torch._six import container_abcs, string_classes, int_classes
+from torch._six import string_classes
+import collections.abc as container_abcs
 
-from definitions import ROOT_DIR
+from cwn.definitions import ROOT_DIR
 
 from cwn.data.complex import Cochain, CochainBatch, Complex, ComplexBatch
 from cwn.data.datasets import (
@@ -41,6 +42,8 @@ from cwn.data.datasets import (
     OceanDataset, ZincDataset, CSLDataset, OGBDataset, RingTransferDataset, RingLookupDataset,
     DummyDataset, DummyMolecularDataset)
 
+# https://github.com/pytorch/pytorch/blob/v1.7.1/torch/_six.py
+int_classes = int
 
 class Collater(object):
     """Object that converts python lists of objects into the appropiate storage format.

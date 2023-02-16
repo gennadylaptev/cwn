@@ -33,8 +33,8 @@ import os.path as osp
 
 from torch_geometric.data import Dataset
 from itertools import repeat, product
-from data.complex import Complex, Cochain
 from torch import Tensor
+from cwn.data.complex import Complex, Cochain
 
 
 def __repr__(obj):
@@ -132,7 +132,7 @@ class InMemoryComplexDataset(ComplexDataset):
     def process(self):
         r"""Processes the dataset to the :obj:`self.processed_dir` folder."""
         raise NotImplementedError
-    
+
     def __init__(self, root=None, transform=None, pre_transform=None,
                  pre_filter=None, max_dim: int = None, num_classes: int = None,
                  include_down_adj=False, init_method=None, cellular: bool = False):
@@ -142,15 +142,15 @@ class InMemoryComplexDataset(ComplexDataset):
                                                      cellular=cellular)
         self.data, self.slices = None, None
         self.__data_list__ = None
-                
+
     def len(self):
         for dim in range(self.max_dim + 1):
             for item in self.slices[dim].values():
                 return len(item) - 1
         return 0
-    
+
     def get(self, idx):
-        
+
         if hasattr(self, '__data_list__'):
             if self.__data_list__ is None:
                 self.__data_list__ = self.len() * [None]
@@ -158,10 +158,10 @@ class InMemoryComplexDataset(ComplexDataset):
                 data = self.__data_list__[idx]
                 if data is not None:
                     return copy.copy(data)
-        
+
         retrieved = [self._get_cochain(dim, idx) for dim in range(0, self.max_dim + 1)]
         cochains = [r[0] for r in retrieved if not r[1]]
-        
+
         targets = self.data['labels']
         start, end = idx, idx + 1
         if torch.is_tensor(targets):
@@ -174,18 +174,18 @@ class InMemoryComplexDataset(ComplexDataset):
             s = start
 
         target = targets[s]
-        
+
         dim = self.data['dims'][idx].item()
         assert dim == len(cochains) - 1
         data = Complex(*cochains, y=target)
-    
+
         if hasattr(self, '__data_list__'):
             self.__data_list__[idx] = copy.copy(data)
-            
+
         return data
-    
+
     def _get_cochain(self, dim, idx) -> (Cochain, bool):
-        
+
         if dim < 0 or dim > self.max_dim:
             raise ValueError(f'The current dataset does not have cochains at dimension {dim}.')
 
@@ -220,12 +220,12 @@ class InMemoryComplexDataset(ComplexDataset):
         empty = (data.num_cells is None)
 
         return data, empty
-    
+
     @staticmethod
     def collate(data_list, max_dim):
         r"""Collates a python list of data objects to the internal storage
         format of :class:`InMemoryComplexDataset`."""
-        
+
         def init_keys(dim, keys):
             cochain = Cochain(dim)
             for key in keys[dim]:
@@ -235,7 +235,7 @@ class InMemoryComplexDataset(ComplexDataset):
             cochain.__num_cells_down__ = []
             slc = {key: [0] for key in keys[dim]}
             return cochain, slc
-        
+
         def collect_keys(data_list, max_dim):
             keys = {dim: set() for dim in range(0, max_dim + 1)}
             for complex in data_list:
@@ -245,7 +245,7 @@ class InMemoryComplexDataset(ComplexDataset):
                     cochain = complex.cochains[dim]
                     keys[dim] |= set(cochain.keys)
             return keys
-            
+
         keys = collect_keys(data_list, max_dim)
         types = {}
         cat_dims = {}
@@ -254,17 +254,17 @@ class InMemoryComplexDataset(ComplexDataset):
         slices = {}
         for dim in range(0, max_dim + 1):
             data[dim], slices[dim] = init_keys(dim, keys)
-        
+
         for complex in data_list:
-            
+
             # Collect cochain-wise items
             for dim in range(0, max_dim + 1):
-                
+
                 # Get cochain, if present
                 cochain = None
                 if dim in complex.cochains:
                     cochain = complex.cochains[dim]
-                
+
                 # Iterate on keys
                 for key in keys[dim]:
                     if cochain is not None and hasattr(cochain, key) and cochain[key] is not None:
@@ -290,7 +290,7 @@ class InMemoryComplexDataset(ComplexDataset):
                     else:
                         s = slices[dim][key][-1] + 0
                     slices[dim][key].append(s)
-                    
+
                 # Handle non-keys
                 # TODO: could they be considered as keys as well?
                 num = None
@@ -306,17 +306,17 @@ class InMemoryComplexDataset(ComplexDataset):
                 data[dim].__num_cells__.append(num)
                 data[dim].__num_cells_up__.append(num_up)
                 data[dim].__num_cells_down__.append(num_down)
-                    
+
             # Collect complex-wise label(s) and dims
             if not hasattr(complex, 'y'):
                 complex.y = None
             if isinstance(complex.y, Tensor):
-                assert complex.y.size(0) == 1   
+                assert complex.y.size(0) == 1
             data['labels'].append(complex.y)
             data['dims'].append(complex.dimension)
 
         # Pack lists into tensors
-        
+
         # Cochains
         for dim in range(0, max_dim + 1):
             for key in keys[dim]:
@@ -332,7 +332,7 @@ class InMemoryComplexDataset(ComplexDataset):
                     data[dim][key] = torch.tensor(data[dim][key])
 
                 slices[dim][key] = torch.tensor(slices[dim][key], dtype=torch.long)
-        
+
         # Labels and dims
         item = data['labels'][0]
         if isinstance(item, Tensor) and len(data_list) > 1:
@@ -346,9 +346,9 @@ class InMemoryComplexDataset(ComplexDataset):
         elif isinstance(item, int) or isinstance(item, float):
             data['labels'] = torch.tensor(data['labels'])
         data['dims'] = torch.tensor(data['dims'])
-        
+
         return data, slices
-    
+
     def copy(self, idx=None):
         if idx is None:
             data_list = [self.get(i) for i in range(len(self))]
@@ -358,9 +358,9 @@ class InMemoryComplexDataset(ComplexDataset):
         dataset.__indices__ = None
         dataset.__data_list__ = data_list
         dataset.data, dataset.slices = self.collate(data_list)
-            
+
         return dataset
-    
+
     def get_split(self, split):
         if split not in ['train', 'valid', 'test']:
             raise ValueError(f'Unknown split {split}.')

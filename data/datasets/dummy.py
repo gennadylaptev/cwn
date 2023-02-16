@@ -1,7 +1,7 @@
 import torch
 
-from data.datasets import InMemoryComplexDataset
-from data.dummy_complexes import get_testing_complex_list, get_mol_testing_complex_list
+from cwn.data.datasets import InMemoryComplexDataset
+from cwn.data.dummy_complexes import get_testing_complex_list, get_mol_testing_complex_list
 
 
 class DummyDataset(InMemoryComplexDataset):
@@ -15,28 +15,28 @@ class DummyDataset(InMemoryComplexDataset):
         self.train_ids = list(range(self.len()))
         self.val_ids = list(range(self.len()))
         self.test_ids = list(range(self.len()))
-            
+
     @property
     def processed_file_names(self):
         name = self.name
         return [f'{name}_complex_list.pt']
-    
+
     @property
     def raw_file_names(self):
         # The processed graph files are our raw files.
-        # They are obtained when running the initial data conversion S2V_to_PyG. 
+        # They are obtained when running the initial data conversion S2V_to_PyG.
         return []
-    
+
     def download(self):
         return
-    
+
     @staticmethod
     def factory():
         complexes = get_testing_complex_list()
         for c, complex in enumerate(complexes):
             complex.y = torch.LongTensor([c % 2])
         return complexes
-        
+
     def process(self):
         print("Instantiating complexes...")
         complexes = self.factory()
@@ -55,7 +55,7 @@ class DummyMolecularDataset(InMemoryComplexDataset):
         self.train_ids = list(range(self.len()))
         self.val_ids = list(range(self.len()))
         self.test_ids = list(range(self.len()))
-            
+
     @property
     def processed_file_names(self):
         name = self.name
@@ -65,16 +65,16 @@ class DummyMolecularDataset(InMemoryComplexDataset):
             fn += '_removed_2feats'
         fn += '.pt'
         return [fn]
-    
+
     @property
     def raw_file_names(self):
         # The processed graph files are our raw files.
-        # They are obtained when running the initial data conversion S2V_to_PyG. 
+        # They are obtained when running the initial data conversion S2V_to_PyG.
         return []
-    
+
     def download(self):
         return
-    
+
     @staticmethod
     def factory(remove_2feats=False):
         complexes = get_mol_testing_complex_list()
@@ -84,7 +84,7 @@ class DummyMolecularDataset(InMemoryComplexDataset):
                     complex.cochains[2].x = None
             complex.y = torch.LongTensor([c % 2])
         return complexes
-        
+
     def process(self):
         print("Instantiating complexes...")
         complexes = self.factory(self.remove_2feats)

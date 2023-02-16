@@ -5,15 +5,16 @@ import pickle
 import torch
 import torch.optim as optim
 import random
+import graph_tool as gt
 
-from data.data_loading import DataLoader, load_dataset, load_graph_dataset
+from cwn.data.data_loading import DataLoader, load_dataset, load_graph_dataset
 from torch_geometric.data import DataLoader as PyGDataLoader
-from exp.train_utils import train, eval, Evaluator
-from exp.parser import get_parser, validate_args
-from mp.graph_models import GIN0, GINWithJK
-from mp.models import CIN0, Dummy, SparseCIN, EdgeOrient, EdgeMPNN, MessagePassingAgnostic
-from mp.molec_models import EmbedSparseCIN, OGBEmbedSparseCIN, EmbedSparseCINNoRings, EmbedGIN
-from mp.ring_exp_models import RingSparseCIN, RingGIN
+from cwn.exp.train_utils import train, eval, Evaluator
+from cwn.exp.parser import get_parser, validate_args
+from cwn.mp.graph_models import GIN0, GINWithJK
+from cwn.mp.models import CIN0, Dummy, SparseCIN, EdgeOrient, EdgeMPNN, MessagePassingAgnostic
+from cwn.mp.molec_models import EmbedSparseCIN, OGBEmbedSparseCIN, EmbedSparseCINNoRings, EmbedGIN
+from cwn.mp.ring_exp_models import RingSparseCIN, RingGIN
 
 
 def main(args):

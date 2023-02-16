@@ -1,10 +1,11 @@
 import torch
-
-from data.utils import compute_ring_2complex
-from data.perm_utils import permute_graph, generate_permutation_matrices
-from data.dummy_complexes import get_mol_testing_complex_list, convert_to_graph
-from data.complex import ComplexBatch
+import graph_tool as gt
+from cwn.data.utils import compute_ring_2complex
+from cwn.data.perm_utils import permute_graph, generate_permutation_matrices
+from cwn.data.dummy_complexes import get_mol_testing_complex_list, convert_to_graph
+from cwn.data.complex import ComplexBatch
 from mp.models import SparseCIN
+
 
 def test_sparse_cin0_perm_invariance_on_dummy_mol_complexes():
 
@@ -14,7 +15,7 @@ def test_sparse_cin0_perm_invariance_on_dummy_mol_complexes():
     for graph in dummy_graphs:
         graph.edge_attr = None
     # (We convert back to complexes to regenerate signals on edges and rings, fixing max_k to 7)
-    dummy_complexes = [compute_ring_2complex(graph.x, graph.edge_index, None, graph.num_nodes, max_k=7, 
+    dummy_complexes = [compute_ring_2complex(graph.x, graph.edge_index, None, graph.num_nodes, max_k=7,
                             include_down_adj=False, init_method='sum', init_edges=True, init_rings=True)
                         for graph in dummy_graphs]
 

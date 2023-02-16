@@ -1,5 +1,6 @@
-from exp.parser import get_parser
-from exp.run_exp import main
+from cwn.exp.parser import get_parser
+from cwn.exp.run_exp import main
+
 
 def get_args_for_dummym():
     args = list()
@@ -16,11 +17,13 @@ def get_args_for_dummym():
     args += ['--readout_dims', '0', '2']
     return args
 
+
 def test_run_exp_on_dummym():
     parser = get_parser()
     args = get_args_for_dummym()
     parsed_args = parser.parse_args(args)
     curves = main(parsed_args)
+
     # On this dataset the splits all coincide; we assert
     # that the final performance is the same on all of them.
     assert curves['last_train'] == curves['last_val']

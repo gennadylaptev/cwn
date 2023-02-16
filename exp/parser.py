@@ -2,7 +2,7 @@ import os
 import time
 import argparse
 
-from definitions import ROOT_DIR
+from cwn.definitions import ROOT_DIR
 
 
 def get_parser():

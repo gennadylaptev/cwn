@@ -1,8 +1,9 @@
+import graph_tool as gt
 import numpy as np
 import torch
 
 from scipy.spatial import Delaunay
-from data.datasets.flow_utils import load_flow_dataset, create_hole, is_inside_rectangle
+from cwn.data.datasets.flow_utils import load_flow_dataset, create_hole, is_inside_rectangle
 
 
 def test_create_hole():

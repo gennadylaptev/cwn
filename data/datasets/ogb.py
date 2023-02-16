@@ -1,8 +1,8 @@
 import torch
 import os.path as osp
 
-from data.utils import convert_graph_dataset_with_rings
-from data.datasets import InMemoryComplexDataset
+from cwn.data.utils import convert_graph_dataset_with_rings
+from cwn.data.datasets import InMemoryComplexDataset
 from ogb.graphproppred import PygGraphPropPredDataset
 
 
@@ -22,7 +22,7 @@ class OGBDataset(InMemoryComplexDataset):
         self.train_ids = idx['train']
         self.val_ids = idx['valid']
         self.test_ids = idx['test']
-        
+
     @property
     def raw_file_names(self):
         name = self.name.replace('-', '_')  # Replacing is to follow OGB folder naming convention
@@ -32,7 +32,7 @@ class OGBDataset(InMemoryComplexDataset):
     @property
     def processed_file_names(self):
         return [f'{self.name}_complex.pt', f'{self.name}_idx.pt', f'{self.name}_tasks.pt']
-    
+
     @property
     def processed_dir(self):
         """Overwrite to change name based on edge and simple feats"""
@@ -55,7 +55,7 @@ class OGBDataset(InMemoryComplexDataset):
         return data, slices, idx, tasks
 
     def process(self):
-        
+
         # At this stage, the graph dataset is already downloaded and processed
         dataset = PygGraphPropPredDataset(self.name, self.raw_dir)
         split_idx = dataset.get_idx_split()
@@ -63,9 +63,9 @@ class OGBDataset(InMemoryComplexDataset):
             print('Using simple features')
             dataset.data.x = dataset.data.x[:,:2]
             dataset.data.edge_attr = dataset.data.edge_attr[:,:2]
-        
-        # NB: the init method would basically have no effect if 
-        # we use edge features and do not initialize rings. 
+
+        # NB: the init method would basically have no effect if
+        # we use edge features and do not initialize rings.
         print(f"Converting the {self.name} dataset to a cell complex...")
         complexes, _, _ = convert_graph_dataset_with_rings(
             dataset,
@@ -75,13 +75,13 @@ class OGBDataset(InMemoryComplexDataset):
             init_edges=self._use_edge_features,
             init_rings=False,
             n_jobs=self._n_jobs)
-        
+
         print(f'Saving processed dataset in {self.processed_paths[0]}...')
         torch.save(self.collate(complexes, self.max_dim), self.processed_paths[0])
-        
+
         print(f'Saving idx in {self.processed_paths[1]}...')
         torch.save(split_idx, self.processed_paths[1])
-        
+
         print(f'Saving num_tasks in {self.processed_paths[2]}...')
         torch.save(dataset.num_tasks, self.processed_paths[2])
 

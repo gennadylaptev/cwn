@@ -2,8 +2,8 @@ import os.path as osp
 import numpy as np
 import torch
 
-from data.datasets import InMemoryComplexDataset
-from data.utils import convert_graph_dataset_with_rings
+from cwn.data.datasets import InMemoryComplexDataset
+from cwn.data.utils import convert_graph_dataset_with_rings
 from torch_geometric.datasets import GNNBenchmarkDataset
 from torch_geometric.utils import remove_self_loops
 

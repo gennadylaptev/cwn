@@ -2,7 +2,7 @@ import os
 import torch
 import pickle
 import numpy as np
-from definitions import ROOT_DIR
+from cwn.definitions import ROOT_DIR
 
 from cwn.data.tu_utils import load_data, S2V_to_PyG, get_fold_indices
 from cwn.data.utils import convert_graph_dataset_with_gudhi, convert_graph_dataset_with_rings
@@ -12,6 +12,7 @@ from cwn.data.datasets import InMemoryComplexDataset
 def load_tu_graph_dataset(name, root=os.path.join(ROOT_DIR, 'datasets'), degree_as_tag=False, fold=0, seed=0):
     raw_dir = os.path.join(root, name, 'raw')
     load_from = os.path.join(raw_dir, '{}_graph_list_degree_as_tag_{}.pkl'.format(name, degree_as_tag))
+
     if os.path.isfile(load_from):
         with open(load_from, 'rb') as handle:
             graph_list = pickle.load(handle)

@@ -1,5 +1,5 @@
 import pytest
-
+import graph_tool as gt
 
 def pytest_addoption(parser):
     parser.addoption(

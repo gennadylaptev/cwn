@@ -2,8 +2,8 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import os
 
-from data.datasets import FlowDataset
-from definitions import ROOT_DIR
+from cwn.data.datasets import FlowDataset
+from cwn.definitions import ROOT_DIR
 
 sns.set_style('white')
 sns.color_palette("tab10")

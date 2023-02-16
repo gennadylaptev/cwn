@@ -1,7 +1,7 @@
 import pickle
 
-from data.datasets import InMemoryComplexDataset
-from data.utils import convert_graph_dataset_with_gudhi
+from cwn.data.datasets import InMemoryComplexDataset
+from cwn.data.utils import convert_graph_dataset_with_gudhi
 from torch_geometric.datasets import GNNBenchmarkDataset
 
 

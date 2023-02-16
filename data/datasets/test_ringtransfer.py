@@ -1,9 +1,9 @@
 import os.path as osp
 
-from data.datasets.ring_utils import generate_ring_transfer_graph_dataset
-from data.utils import convert_graph_dataset_with_rings
-from data.datasets import RingTransferDataset
-from definitions import ROOT_DIR
+from cwn.data.datasets.ring_utils import generate_ring_transfer_graph_dataset
+from cwn.data.utils import convert_graph_dataset_with_rings
+from cwn.data.datasets import RingTransferDataset
+from cwn.definitions import ROOT_DIR
 
 
 def test_ringtree_dataset_generation():

@@ -96,6 +96,7 @@ class CochainMessagePassing(torch.nn.Module):
         self.down_msg_size = down_msg_size
         self.use_boundary_msg = use_boundary_msg
         self.use_down_msg = use_down_msg
+
         # Use the same out dimension for boundaries as for down adjacency by default
         self.boundary_msg_size = down_msg_size if boundary_msg_size is None else boundary_msg_size
         self.aggr_up = aggr_up
@@ -118,12 +119,15 @@ class CochainMessagePassing(torch.nn.Module):
         self.inspector.inspect(self.message_up)
         self.inspector.inspect(self.message_down)
         self.inspector.inspect(self.message_boundary)
+
         self.inspector.inspect(self.aggregate_up, pop_first_n=1)
         self.inspector.inspect(self.aggregate_down, pop_first_n=1)
         self.inspector.inspect(self.aggregate_boundary, pop_first_n=1)
+
         self.inspector.inspect(self.message_and_aggregate_up, pop_first_n=1)
         self.inspector.inspect(self.message_and_aggregate_down, pop_first_n=1)
         self.inspector.inspect(self.message_and_aggregate_boundary, pop_first_n=1)
+
         self.inspector.inspect(self.update, pop_first_n=3)
 
         # Return the parameter name for these functions minus those specified in special_args
@@ -131,10 +135,12 @@ class CochainMessagePassing(torch.nn.Module):
         self.__user_args__ = self.inspector.keys(
             ['message_up', 'message_down', 'message_boundary', 'aggregate_up',
              'aggregate_down', 'aggregate_boundary']).difference(self.special_args)
+
         self.__fused_user_args__ = self.inspector.keys(
             ['message_and_aggregate_up',
              'message_and_aggregate_down',
              'message_and_aggregate_boundary']).difference(self.special_args)
+
         self.__update_user_args__ = self.inspector.keys(
             ['update']).difference(self.special_args)
 
@@ -193,6 +199,10 @@ class CochainMessagePassing(torch.nn.Module):
                  f'dimension {self.node_dim}, but expected size {the_size}.'))
 
     def __lift__(self, src, index, dim):
+        """ 'Lift' feature matrix to index:
+            copy and map each x_k to corresponding position in index
+            (see `torch.index_select`)
+        """
         if isinstance(index, Tensor):
             index = index[dim]
             return src.index_select(self.node_dim, index)
@@ -211,25 +221,38 @@ class CochainMessagePassing(torch.nn.Module):
         assert adjacency in ['up', 'down', 'boundary']
 
         out = {}
+        # here we map each user_arg to the corresponding feature matrix
+        # like up_x_j to x or boundary_x_j to boundary_attr
+        # feature matrices come from cochaih params
         for arg in args:
             # Here the x_i and x_j parameters are automatically extracted
             # from an argument having the prefix x.
             if arg[-2:] not in ['_i', '_j']:
                 out[arg] = kwargs.get(arg, Parameter.empty)
+
             elif index is not None:
                 dim = 0 if arg[-2:] == '_j' else 1
+
                 # Extract any part up to _j or _i. So for x_j extract x
                 if adjacency == 'up' and arg.startswith('up_'):
+                    # map use_arg_name to real tensor w/ embeddings
+                    # e.g. up_x_j -> x
                     data = kwargs.get(arg[3:-2], Parameter.empty)
                     size_data = data
+
                 elif adjacency == 'down' and arg.startswith('down_'):
+                    # get `x`
                     data = kwargs.get(arg[5:-2], Parameter.empty)
                     size_data = data
+
                 elif adjacency == 'boundary' and arg.startswith('boundary_'):
+                    # map `boundary_x_j` not to x (you silly)
+                    # but to `boundary_attr` since we need embeddings for (dim-1)-cells
                     if dim == 0:
                         # We need to use the boundary attribute matrix (i.e. boundary_attr) for the features
                         # And we need to use the x matrix to extract the number of parent cells
                         data = kwargs.get('boundary_attr', Parameter.empty)
+                        # basically extract `x`
                         size_data = kwargs.get(arg[9:-2], Parameter.empty)
                     else:
                         data = kwargs.get(arg[9:-2], Parameter.empty)
@@ -247,6 +270,7 @@ class CochainMessagePassing(torch.nn.Module):
                 if isinstance(data, Tensor):
                     # Same size checks as above.
                     self.__set_size__(size, dim, size_data)
+
                     # Select the features of the nodes indexed by i or j from the data matrix
                     data = self.__lift__(data, index, j if arg[-2:] == '_j' else i)
 
@@ -321,10 +345,13 @@ class CochainMessagePassing(torch.nn.Module):
         else:
             return None
 
-    def __message_and_aggregate__(self, index: Adj,
-                                  adjacency: str,
-                                  size: List[Optional[int]] = None,
-                                  **kwargs):
+    def __message_and_aggregate__(
+        self,
+        index: Adj,
+        adjacency: str,  # it could be Enum btw
+        size: List[Optional[int]] = None,
+        **kwargs,
+    ):
         assert adjacency in ['up', 'down', 'boundary']
 
         # Fused message and aggregation
@@ -346,41 +373,49 @@ class CochainMessagePassing(torch.nn.Module):
 
             # Up message and aggregation
             msg_kwargs = self.inspector.distribute(f'message_{adjacency}', coll_dict)
+            # Get corresponding message function
             message = self.get_msg_func(adjacency)
+            # Run this method on lifted arguments
+            import pdb; pdb.set_trace()
             out = message(**msg_kwargs)
 
-            # import pdb; pdb.set_trace()
             aggr_kwargs = self.inspector.distribute(f'aggregate_{adjacency}', coll_dict)
             aggregate = self.get_agg_func(adjacency)
             return aggregate(out, **aggr_kwargs)
 
-    def propagate(self, up_index: Optional[Adj],
-                  down_index: Optional[Adj],
-                  boundary_index: Optional[Adj],  # The None default does not work here!
-                  up_size: Size = None,
-                  down_size: Size = None,
-                  boundary_size: Size = None,
-                  **kwargs):
+    def propagate(
+        self,
+        up_index: Optional[Adj],
+        down_index: Optional[Adj],
+        boundary_index: Optional[Adj],  # The None default does not work here!
+        up_size: Size = None,
+        down_size: Size = None,
+        boundary_size: Size = None,
+        **kwargs,
+    ):
         """The initial call to start propagating messages."""
+        # Some basic checks
         up_size = self.__check_input_separately__(up_index, up_size)
         down_size = self.__check_input_separately__(down_index, down_size)
         boundary_size = self.__check_input_separately__(boundary_index, boundary_size)
         self.__check_input_together__(up_index, down_index, up_size, down_size)
 
-        up_out, down_out = None, None
         # Up messaging and aggregation
+        up_out = None
         if up_index is not None:
             up_out = self.__message_and_aggregate__(up_index, 'up', up_size, **kwargs)
 
         # Down messaging and aggregation
+        down_out = None
         if self.use_down_msg and down_index is not None:
             down_out = self.__message_and_aggregate__(down_index, 'down', down_size, **kwargs)
 
-        # boundary messaging and aggregation
+        # Boundary messaging and aggregation
         boundary_out = None
         if self.use_boundary_msg and 'boundary_attr' in kwargs and kwargs['boundary_attr'] is not None:
             boundary_out = self.__message_and_aggregate__(boundary_index, 'boundary', boundary_size, **kwargs)
 
+        # collect args for update functions
         coll_dict = {}
         up_coll_dict = self.__collect__(self.__update_user_args__, up_index, up_size, 'up',
                                         kwargs)
@@ -388,7 +423,10 @@ class CochainMessagePassing(torch.nn.Module):
                                           down_index, down_size, 'down', kwargs)
         coll_dict.update(up_coll_dict)
         coll_dict.update(down_coll_dict)
+        # map collected args to update function params
         update_kwargs = self.inspector.distribute('update', coll_dict)
+
+        # run update func for all adjacencies (identity by default)
         return self.update(up_out, down_out, boundary_out, **update_kwargs)
 
     def message_up(self, up_x_j: Tensor, up_attr: Tensor) -> Tensor:
@@ -420,9 +458,13 @@ class CochainMessagePassing(torch.nn.Module):
         """
         return boundary_x_j
 
-    def aggregate_up(self, inputs: Tensor, agg_up_index: Tensor,
-                     up_ptr: Optional[Tensor] = None,
-                     up_dim_size: Optional[int] = None) -> Tensor:
+    def aggregate_up(
+        self,
+        inputs: Tensor,
+        agg_up_index: Tensor,
+        up_ptr: Optional[Tensor] = None,
+        up_dim_size: Optional[int] = None,
+    ) -> Tensor:
         r"""Aggregates messages from upper adjacent cells.
 
         Takes in the output of message computation as first argument and any
@@ -436,12 +478,21 @@ class CochainMessagePassing(torch.nn.Module):
             up_ptr = expand_left(up_ptr, dim=self.node_dim, dims=inputs.dim())
             return segment_csr(inputs, up_ptr, reduce=self.aggr_up)
         else:
-            return scatter(inputs, agg_up_index, dim=self.node_dim, dim_size=up_dim_size,
-                           reduce=self.aggr_up)
+            return scatter(
+                inputs,  # embeddings lifted up to index
+                agg_up_index,  # corresponding index
+                dim=self.node_dim,  # embeddings dim
+                dim_size=up_dim_size,
+                reduce=self.aggr_up,
+            )
 
-    def aggregate_down(self, inputs: Tensor, agg_down_index: Tensor,
-                       down_ptr: Optional[Tensor] = None,
-                       down_dim_size: Optional[int] = None) -> Tensor:
+    def aggregate_down(
+        self,
+        inputs: Tensor,
+        agg_down_index: Tensor,
+        down_ptr: Optional[Tensor] = None,
+        down_dim_size: Optional[int] = None,
+    ) -> Tensor:
         r"""Aggregates messages from lower adjacent cells.
 
         Takes in the output of message computation as first argument and any
@@ -508,11 +559,18 @@ class CochainMessagePassing(torch.nn.Module):
         """
         raise NotImplementedError
 
-    def update(self, up_inputs: Optional[Tensor], down_inputs: Optional[Tensor],
-               boundary_inputs: Optional[Tensor], x: Tensor) -> (Tensor, Tensor, Tensor):
+    def update(
+        self,
+        up_inputs: Optional[Tensor],
+        down_inputs: Optional[Tensor],
+        boundary_inputs: Optional[Tensor],
+        x: Tensor,
+    ) -> (Tensor, Tensor, Tensor):
         r"""Updates cell embeddings. Takes in the output of the aggregations from different
         adjacencies as the first three arguments and any argument which was initially passed to
         :meth:`propagate`.
+
+        By default, it's just identity function that replaces Nones by zero tensors
         """
         if up_inputs is None:
             up_inputs = torch.zeros(x.size(0), self.up_msg_size).to(device=x.device)

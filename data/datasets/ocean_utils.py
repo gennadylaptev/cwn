@@ -32,9 +32,9 @@ import numpy as np
 import h5py
 import os.path as osp
 import matplotlib.pyplot as plt
-import data.datasets.flow_utils as fu
+import cwn.data.datasets.flow_utils as fu
 
-from definitions import ROOT_DIR
+from cwn.definitions import ROOT_DIR
 from tqdm import tqdm
 
 

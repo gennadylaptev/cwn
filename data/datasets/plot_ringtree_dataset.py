@@ -1,7 +1,7 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 
-from data.datasets.ring_utils import generate_ring_transfer_graph_dataset
+from cwn.data.datasets.ring_utils import generate_ring_transfer_graph_dataset
 from torch_geometric.utils import convert
 
 

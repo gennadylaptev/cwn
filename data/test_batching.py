@@ -2,23 +2,23 @@ import torch
 import pytest
 import itertools
 
-from data.dummy_complexes import (get_house_complex, get_square_complex, get_pyramid_complex,
+from cwn.data.dummy_complexes import (get_house_complex, get_square_complex, get_pyramid_complex,
     get_square_dot_complex, get_kite_complex)
 
-from data.complex import ComplexBatch
-from data.dummy_complexes import get_testing_complex_list
-from data.data_loading import DataLoader, load_dataset
+from cwn.data.complex import ComplexBatch
+from cwn.data.dummy_complexes import get_testing_complex_list
+from cwn.data.data_loading import DataLoader, load_dataset
 
 
 def validate_double_house(batch):
-    
+
     expected_node_upper = torch.tensor([[0, 1, 0, 3, 1, 2, 2, 3, 2, 4, 3, 4, 5, 6, 5, 8, 6, 7, 7, 8, 7, 9, 8, 9],
                                         [1, 0, 3, 0, 2, 1, 3, 2, 4, 2, 4, 3, 6, 5, 8, 5, 7, 6, 8, 7, 9, 7, 9, 8]], dtype=torch.long)
     expected_node_shared_coboundaries = torch.tensor([0, 0, 3, 3, 1, 1, 2, 2, 5, 5, 4, 4, 6, 6, 9, 9, 7, 7, 8, 8, 11, 11, 10, 10], dtype=torch.long)
     expected_node_x = torch.tensor([[1], [2], [3], [4], [5], [1], [2], [3], [4], [5]], dtype=torch.float)
     expected_node_y = torch.tensor([0, 0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=torch.long)
     expected_node_batch = torch.tensor([0, 0, 0, 0, 0, 1, 1, 1, 1, 1], dtype=torch.long)
-    
+
     expected_edge_upper = torch.tensor([[2, 4, 2, 5, 4, 5, 8, 10, 8, 11, 10, 11],
                                         [4, 2, 5, 2, 5, 4, 10, 8, 11, 8, 11, 10]], dtype=torch.long)
     expected_edge_shared_coboundaries = torch.tensor([0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1], dtype=torch.long)
@@ -30,11 +30,11 @@ def validate_double_house(batch):
     expected_edge_x = torch.tensor([[1], [2], [3], [4], [5], [6], [1], [2], [3], [4], [5], [6]], dtype=torch.float)
     expected_edge_y = torch.tensor([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], dtype=torch.long)
     expected_edge_batch = torch.tensor([0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1], dtype=torch.long)
-    
+
     expected_two_cell_x = torch.tensor([[1], [1]], dtype=torch.float)
     expected_two_cell_y = torch.tensor([2, 2], dtype=torch.long)
     expected_two_cell_batch = torch.tensor([0, 1], dtype=torch.long)
-    
+
     assert torch.equal(expected_node_upper, batch.nodes.upper_index)
     assert torch.equal(expected_node_shared_coboundaries, batch.nodes.shared_coboundaries)
     assert batch.nodes.lower_index is None
@@ -42,7 +42,7 @@ def validate_double_house(batch):
     assert torch.equal(expected_node_x, batch.nodes.x)
     assert torch.equal(expected_node_y, batch.nodes.y)
     assert torch.equal(expected_node_batch, batch.nodes.batch)
-    
+
     assert torch.equal(expected_edge_upper, batch.edges.upper_index)
     assert torch.equal(expected_edge_shared_coboundaries, batch.edges.shared_coboundaries)
     assert torch.equal(expected_edge_lower, batch.edges.lower_index)
@@ -50,7 +50,7 @@ def validate_double_house(batch):
     assert torch.equal(expected_edge_x, batch.edges.x)
     assert torch.equal(expected_edge_y, batch.edges.y)
     assert torch.equal(expected_edge_batch, batch.edges.batch)
-    
+
     assert batch.two_cells.upper_index is None
     assert batch.two_cells.lower_index is None
     assert batch.two_cells.shared_coboundaries is None
@@ -58,17 +58,17 @@ def validate_double_house(batch):
     assert torch.equal(expected_two_cell_x, batch.two_cells.x)
     assert torch.equal(expected_two_cell_y, batch.two_cells.y)
     assert torch.equal(expected_two_cell_batch, batch.two_cells.batch)
-    
+
 
 def validate_square_dot_and_square(batch):
-    
+
     expected_node_upper = torch.tensor([        [0, 1, 0, 3, 1, 2, 2, 3, 5, 6, 5, 8, 6, 7, 7, 8],
                                                 [1, 0, 3, 0, 2, 1, 3, 2, 6, 5, 8, 5, 7, 6, 8, 7]], dtype=torch.long)
     expected_node_shared_coboundaries = torch.tensor([0, 0, 3, 3, 1, 1, 2, 2, 4, 4, 7, 7, 5, 5, 6, 6], dtype=torch.long)
     expected_node_x = torch.tensor([[1], [2], [3], [4], [5], [1], [2], [3], [4]], dtype=torch.float)
     expected_node_y = torch.tensor([0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=torch.long)
     expected_node_batch = torch.tensor([0, 0, 0, 0, 0, 1, 1, 1, 1], dtype=torch.long)
-    
+
     expected_edge_lower = torch.tensor([      [0, 1, 0, 3, 1, 2, 2, 3, 4, 5, 4, 7, 5, 6, 6, 7],
                                               [1, 0, 3, 0, 2, 1, 3, 2, 5, 4, 7, 4, 6, 5, 7, 6]], dtype=torch.long)
     expected_edge_shared_boundaries = torch.tensor([1, 1, 0, 0, 2, 2, 3, 3, 6, 6, 5, 5, 7, 7, 8, 8],
@@ -76,7 +76,7 @@ def validate_square_dot_and_square(batch):
     expected_edge_x = torch.tensor([[1], [2], [3], [4], [1], [2], [3], [4]], dtype=torch.float)
     expected_edge_y = torch.tensor([1, 1, 1, 1, 1, 1, 1, 1,], dtype=torch.long)
     expected_edge_batch = torch.tensor([0, 0, 0, 0, 1, 1, 1, 1], dtype=torch.long)
-    
+
     assert torch.equal(expected_node_upper, batch.nodes.upper_index)
     assert torch.equal(expected_node_shared_coboundaries, batch.nodes.shared_coboundaries)
     assert batch.nodes.lower_index is None
@@ -84,7 +84,7 @@ def validate_square_dot_and_square(batch):
     assert torch.equal(expected_node_x, batch.nodes.x)
     assert torch.equal(expected_node_y, batch.nodes.y)
     assert torch.equal(expected_node_batch, batch.nodes.batch)
-    
+
     assert batch.edges.upper_index is None
     assert batch.edges.shared_coboundaries is None
     assert torch.equal(expected_edge_lower, batch.edges.lower_index)
@@ -92,7 +92,7 @@ def validate_square_dot_and_square(batch):
     assert torch.equal(expected_edge_x, batch.edges.x)
     assert torch.equal(expected_edge_y, batch.edges.y)
     assert torch.equal(expected_edge_batch, batch.edges.batch)
-    
+
 
 def validate_kite_and_house(batch):
 
@@ -101,46 +101,46 @@ def validate_kite_and_house(batch):
     shifted_house_node_upper = 5 + torch.tensor([[0, 1, 0, 3, 1, 2, 2, 3, 2, 4, 3, 4],
                                         [1, 0, 3, 0, 2, 1, 3, 2, 4, 2, 4, 3]], dtype=torch.long)
     expected_node_upper = torch.cat([kite_node_upper, shifted_house_node_upper], 1)
-    
+
     kite_node_shared_coboundaries = torch.tensor([0, 0, 2, 2, 1, 1, 3, 3, 4, 4, 5, 5], dtype=torch.long)
     shifted_house_node_shared_coboundaries = 6 + torch.tensor([0, 0, 3, 3, 1, 1, 2, 2, 5, 5, 4, 4], dtype=torch.long)
     expected_node_shared_coboundaries = torch.cat([kite_node_shared_coboundaries, shifted_house_node_shared_coboundaries], 0)
-    
+
     expected_node_x = torch.tensor([[1], [2], [3], [4], [5], [1], [2], [3], [4], [5]], dtype=torch.float)
     expected_node_y = torch.tensor([0, 0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=torch.long)
     expected_node_batch = torch.tensor([0, 0, 0, 0, 0, 1, 1, 1, 1, 1], dtype=torch.long)
-    
+
     kite_edge_upper = torch.tensor([[0, 1, 0, 2, 1, 2, 1, 3, 1, 4, 3, 4],
                                     [1, 0, 2, 0, 2, 1, 3, 1, 4, 1, 4, 3]], dtype=torch.long)
     shifted_house_edge_upper = 6 + torch.tensor([[2, 4, 2, 5, 4, 5],
                                                  [4, 2, 5, 2, 5, 4]], dtype=torch.long)
     expected_edge_upper = torch.cat([kite_edge_upper, shifted_house_edge_upper], 1)
-    
+
     kite_edge_shared_coboundaries = torch.tensor([0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1], dtype=torch.long)
     shifted_house_edge_shared_coboundaries = 2 + torch.tensor([0, 0, 0, 0, 0, 0], dtype=torch.long)
     expected_edge_shared_coboundaries = torch.cat([kite_edge_shared_coboundaries, shifted_house_edge_shared_coboundaries], 0)
-    
+
     kite_edge_lower = torch.tensor([ [0, 1, 0, 3, 1, 3, 0, 2, 1, 2, 2, 4, 1, 4, 3, 4, 3, 5, 4, 5],
                                      [1, 0, 3, 0, 3, 1, 2, 0, 2, 1, 4, 2, 4, 1, 4, 3, 5, 3, 5, 4]], dtype=torch.long)
     shifted_house_lower = 6 + torch.tensor([[0, 1, 0, 3, 1, 2, 1, 5, 2, 3, 2, 4, 2, 5, 3, 4, 4, 5],
                                             [1, 0, 3, 0, 2, 1, 5, 1, 3, 2, 4, 2, 5, 2, 4, 3, 5, 4]], dtype=torch.long)
     expected_edge_lower = torch.cat([kite_edge_lower, shifted_house_lower], 1)
-    
+
     kite_edge_shared_boundaries = torch.tensor([1, 1, 1, 1, 1, 1, 0, 0, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3], dtype=torch.long)
     shifted_house_edge_shared_boundaries = 5 + torch.tensor([1, 1, 0, 0, 2, 2, 2, 2, 3, 3, 3, 3, 2, 2, 3, 3, 4, 4], dtype=torch.long)
     expected_edge_shared_boundaries = torch.cat([kite_edge_shared_boundaries, shifted_house_edge_shared_boundaries], 0)
-    
+
     expected_edge_x = torch.tensor([[1], [2], [3], [4], [5], [6], [1], [2], [3], [4], [5], [6]], dtype=torch.float)
     expected_edge_y = torch.tensor([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], dtype=torch.long)
     expected_edge_batch = torch.tensor([0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1], dtype=torch.long)
-    
+
     expected_two_cell_lower = torch.tensor([[0, 1],
                                             [1, 0]], dtype=torch.long)
     expected_two_cell_shared_boundaries = torch.tensor([1, 1], dtype=torch.long)
     expected_two_cell_x = torch.tensor([[1], [2], [1]], dtype=torch.float)
     expected_two_cell_y = torch.tensor([2, 2, 2], dtype=torch.long)
     expected_two_cell_batch = torch.tensor([0, 0, 1], dtype=torch.long)
-    
+
     assert torch.equal(expected_node_upper, batch.nodes.upper_index)
     assert torch.equal(expected_node_shared_coboundaries, batch.nodes.shared_coboundaries)
     assert batch.nodes.lower_index is None
@@ -148,7 +148,7 @@ def validate_kite_and_house(batch):
     assert torch.equal(expected_node_x, batch.nodes.x)
     assert torch.equal(expected_node_y, batch.nodes.y)
     assert torch.equal(expected_node_batch, batch.nodes.batch)
-    
+
     assert torch.equal(expected_edge_upper, batch.edges.upper_index)
     assert torch.equal(expected_edge_shared_coboundaries, batch.edges.shared_coboundaries)
     assert torch.equal(expected_edge_lower, batch.edges.lower_index)
@@ -156,7 +156,7 @@ def validate_kite_and_house(batch):
     assert torch.equal(expected_edge_x, batch.edges.x)
     assert torch.equal(expected_edge_y, batch.edges.y)
     assert torch.equal(expected_edge_batch, batch.edges.batch)
-    
+
     assert batch.two_cells.upper_index is None
     assert batch.two_cells.shared_coboundaries is None
     assert torch.equal(expected_two_cell_lower, batch.two_cells.lower_index)
@@ -164,17 +164,17 @@ def validate_kite_and_house(batch):
     assert torch.equal(expected_two_cell_x, batch.two_cells.x)
     assert torch.equal(expected_two_cell_y, batch.two_cells.y)
     assert torch.equal(expected_two_cell_batch, batch.two_cells.batch)
-    
-    
+
+
 def validate_house_and_square(batch):
-    
+
     expected_node_upper = torch.tensor([[0, 1, 0, 3, 1, 2, 2, 3, 2, 4, 3, 4, 5, 6, 5, 8, 6, 7, 7, 8],
                                         [1, 0, 3, 0, 2, 1, 3, 2, 4, 2, 4, 3, 6, 5, 8, 5, 7, 6, 8, 7]], dtype=torch.long)
     expected_node_shared_coboundaries = torch.tensor([0, 0, 3, 3, 1, 1, 2, 2, 5, 5, 4, 4, 6, 6, 9, 9, 7, 7, 8, 8], dtype=torch.long)
     expected_node_x = torch.tensor([[1], [2], [3], [4], [5], [1], [2], [3], [4]], dtype=torch.float)
     expected_node_y = torch.tensor([0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=torch.long)
     expected_node_batch = torch.tensor([0, 0, 0, 0, 0, 1, 1, 1, 1], dtype=torch.long)
-    
+
     expected_edge_upper = torch.tensor([[2, 4, 2, 5, 4, 5],
                                         [4, 2, 5, 2, 5, 4]], dtype=torch.long)
     expected_edge_shared_coboundaries = torch.tensor([0, 0, 0, 0, 0, 0], dtype=torch.long)
@@ -186,11 +186,11 @@ def validate_house_and_square(batch):
     expected_edge_x = torch.tensor([[1], [2], [3], [4], [5], [6], [1], [2], [3], [4]], dtype=torch.float)
     expected_edge_y = torch.tensor([1, 1, 1, 1, 1, 1, 1, 1, 1, 1,], dtype=torch.long)
     expected_edge_batch = torch.tensor([0, 0, 0, 0, 0, 0, 1, 1, 1, 1], dtype=torch.long)
-    
+
     expected_two_cell_x = torch.tensor([[1]], dtype=torch.float)
     expected_two_cell_y = torch.tensor([2], dtype=torch.long)
     expected_two_cell_batch = torch.tensor([0], dtype=torch.long)
-    
+
     assert torch.equal(expected_node_upper, batch.nodes.upper_index)
     assert torch.equal(expected_node_shared_coboundaries, batch.nodes.shared_coboundaries)
     assert batch.nodes.lower_index is None
@@ -198,7 +198,7 @@ def validate_house_and_square(batch):
     assert torch.equal(expected_node_x, batch.nodes.x)
     assert torch.equal(expected_node_y, batch.nodes.y)
     assert torch.equal(expected_node_batch, batch.nodes.batch)
-    
+
     assert torch.equal(expected_edge_upper, batch.edges.upper_index)
     assert torch.equal(expected_edge_shared_coboundaries, batch.edges.shared_coboundaries)
     assert torch.equal(expected_edge_lower, batch.edges.lower_index)
@@ -206,7 +206,7 @@ def validate_house_and_square(batch):
     assert torch.equal(expected_edge_x, batch.edges.x)
     assert torch.equal(expected_edge_y, batch.edges.y)
     assert torch.equal(expected_edge_batch, batch.edges.batch)
-    
+
     assert batch.two_cells.upper_index is None
     assert batch.two_cells.lower_index is None
     assert batch.two_cells.shared_coboundaries is None
@@ -214,10 +214,10 @@ def validate_house_and_square(batch):
     assert torch.equal(expected_two_cell_x, batch.two_cells.x)
     assert torch.equal(expected_two_cell_y, batch.two_cells.y)
     assert torch.equal(expected_two_cell_batch, batch.two_cells.batch)
-    
-    
+
+
 def validate_house_square_house(batch):
-    
+
     expected_node_upper = torch.tensor([[0, 1, 0, 3, 1, 2, 2, 3, 2, 4, 3, 4, 5, 6, 5, 8, 6, 7, 7, 8, 9, 10, 9, 12, 10, 11, 11, 12, 11, 13, 12, 13],
                                         [1, 0, 3, 0, 2, 1, 3, 2, 4, 2, 4, 3, 6, 5, 8, 5, 7, 6, 8, 7, 10, 9, 12, 9, 11, 10, 12, 11, 13, 11, 13, 12]],
                                        dtype=torch.long)
@@ -226,7 +226,7 @@ def validate_house_square_house(batch):
     expected_node_x = torch.tensor([[1], [2], [3], [4], [5], [1], [2], [3], [4], [1], [2], [3], [4], [5]], dtype=torch.float)
     expected_node_y = torch.tensor([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=torch.long)
     expected_node_batch = torch.tensor([0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2], dtype=torch.long)
-    
+
     expected_edge_upper = torch.tensor([[2, 4, 2, 5, 4, 5, 12, 14, 12, 15, 14, 15],
                                         [4, 2, 5, 2, 5, 4, 14, 12, 15, 12, 15, 14]], dtype=torch.long)
     expected_edge_shared_coboundaries = torch.tensor([0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1], dtype=torch.long)
@@ -238,11 +238,11 @@ def validate_house_square_house(batch):
     expected_edge_x = torch.tensor([[1], [2], [3], [4], [5], [6], [1], [2], [3], [4], [1], [2], [3], [4], [5], [6]], dtype=torch.float)
     expected_edge_y = torch.tensor([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], dtype=torch.long)
     expected_edge_batch = torch.tensor([0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2], dtype=torch.long)
-    
+
     expected_two_cell_x = torch.tensor([[1], [1]], dtype=torch.float)
     expected_two_cell_y = torch.tensor([2, 2], dtype=torch.long)
     expected_two_cell_batch = torch.tensor([0, 2], dtype=torch.long)
-    
+
     assert torch.equal(expected_node_upper, batch.nodes.upper_index)
     assert torch.equal(expected_node_shared_coboundaries, batch.nodes.shared_coboundaries)
     assert batch.nodes.lower_index is None
@@ -250,7 +250,7 @@ def validate_house_square_house(batch):
     assert torch.equal(expected_node_x, batch.nodes.x)
     assert torch.equal(expected_node_y, batch.nodes.y)
     assert torch.equal(expected_node_batch, batch.nodes.batch)
-    
+
     assert torch.equal(expected_edge_upper, batch.edges.upper_index)
     assert torch.equal(expected_edge_shared_coboundaries, batch.edges.shared_coboundaries)
     assert torch.equal(expected_edge_lower, batch.edges.lower_index)
@@ -258,7 +258,7 @@ def validate_house_square_house(batch):
     assert torch.equal(expected_edge_x, batch.edges.x)
     assert torch.equal(expected_edge_y, batch.edges.y)
     assert torch.equal(expected_edge_batch, batch.edges.batch)
-    
+
     assert batch.two_cells.upper_index is None
     assert batch.two_cells.lower_index is None
     assert batch.two_cells.shared_coboundaries is None
@@ -266,17 +266,17 @@ def validate_house_square_house(batch):
     assert torch.equal(expected_two_cell_x, batch.two_cells.x)
     assert torch.equal(expected_two_cell_y, batch.two_cells.y)
     assert torch.equal(expected_two_cell_batch, batch.two_cells.batch)
-    
-    
+
+
 def validate_house_no_batching(batch):
-        
+
     expected_node_upper = torch.tensor([[0, 1, 0, 3, 1, 2, 2, 3, 2, 4, 3, 4],
                                         [1, 0, 3, 0, 2, 1, 3, 2, 4, 2, 4, 3]], dtype=torch.long)
     expected_node_shared_coboundaries = torch.tensor([0, 0, 3, 3, 1, 1, 2, 2, 5, 5, 4, 4], dtype=torch.long)
     expected_node_x = torch.tensor([[1], [2], [3], [4], [5]], dtype=torch.float)
     expected_node_y = torch.tensor([0, 0, 0, 0, 0], dtype=torch.long)
     expected_node_batch = torch.tensor([0, 0, 0, 0, 0], dtype=torch.long)
-    
+
     expected_edge_upper = torch.tensor([[2, 4, 2, 5, 4, 5],
                                         [4, 2, 5, 2, 5, 4]], dtype=torch.long)
     expected_edge_shared_coboundaries = torch.tensor([0, 0, 0, 0, 0, 0], dtype=torch.long)
@@ -288,11 +288,11 @@ def validate_house_no_batching(batch):
     expected_edge_x = torch.tensor([[1], [2], [3], [4], [5], [6]], dtype=torch.float)
     expected_edge_y = torch.tensor([1, 1, 1, 1, 1, 1], dtype=torch.long)
     expected_edge_batch = torch.tensor([0, 0, 0, 0, 0, 0], dtype=torch.long)
-    
+
     expected_two_cell_x = torch.tensor([[1]], dtype=torch.float)
     expected_two_cell_y = torch.tensor([2], dtype=torch.long)
     expected_two_cell_batch = torch.tensor([0], dtype=torch.long)
-    
+
     assert torch.equal(expected_node_upper, batch.nodes.upper_index)
     assert torch.equal(expected_node_shared_coboundaries, batch.nodes.shared_coboundaries)
     assert batch.nodes.lower_index is None
@@ -300,7 +300,7 @@ def validate_house_no_batching(batch):
     assert torch.equal(expected_node_x, batch.nodes.x)
     assert torch.equal(expected_node_y, batch.nodes.y)
     assert torch.equal(expected_node_batch, batch.nodes.batch)
-    
+
     assert torch.equal(expected_edge_upper, batch.edges.upper_index)
     assert torch.equal(expected_edge_shared_coboundaries, batch.edges.shared_coboundaries)
     assert torch.equal(expected_edge_lower, batch.edges.lower_index)
@@ -308,7 +308,7 @@ def validate_house_no_batching(batch):
     assert torch.equal(expected_edge_x, batch.edges.x)
     assert torch.equal(expected_edge_y, batch.edges.y)
     assert torch.equal(expected_edge_batch, batch.edges.batch)
-    
+
     assert batch.two_cells.upper_index is None
     assert batch.two_cells.lower_index is None
     assert batch.two_cells.shared_coboundaries is None
@@ -316,8 +316,8 @@ def validate_house_no_batching(batch):
     assert torch.equal(expected_two_cell_x, batch.two_cells.x)
     assert torch.equal(expected_two_cell_y, batch.two_cells.y)
     assert torch.equal(expected_two_cell_batch, batch.two_cells.batch)
-    
-    
+
+
 def test_double_house_batching():
     """
        4         9
@@ -338,14 +338,14 @@ def test_double_house_batching():
      |   |     |   |
      .---.     .---.
     """
-    
+
     house_1 = get_house_complex()
     house_2 = get_house_complex()
     complex_list = [house_1, house_2]
     batch = ComplexBatch.from_complex_list(complex_list)
     validate_double_house(batch)
-    
-    
+
+
 def test_house_and_square_batching():
     """
        4
@@ -366,15 +366,15 @@ def test_house_and_square_batching():
      |   |     |   |
      .---.     .---.
     """
-    
+
     house_1 = get_house_complex()
     square = get_square_complex()
     complex_list = [house_1, square]
     batch = ComplexBatch.from_complex_list(complex_list)
-    
+
     validate_house_and_square(batch)
-    
-    
+
+
 def test_house_square_house_batching():
     """
        4                   13
@@ -395,18 +395,18 @@ def test_house_square_house_batching():
      |   |     |   |     |   |
      .---.     .---.     .---.
     """
-    
+
     house_1 = get_house_complex()
     house_2 = get_house_complex()
     square = get_square_complex()
     complex_list = [house_1, square, house_2]
     batch = ComplexBatch.from_complex_list(complex_list)
-    
+
     validate_house_square_house(batch)
-    
+
 
 def test_square_dot_square_batching():
-    
+
     '''
      3---2           8---7
      |   |           |   |
@@ -418,80 +418,80 @@ def test_square_dot_square_batching():
 
      .---.           .---.
      |   |           |   |
-     .---.  .        .---. 
+     .---.  .        .---.
     '''
     square_dot = get_square_dot_complex()
     square = get_square_complex()
     complex_list = [square_dot, square]
     batch = ComplexBatch.from_complex_list(complex_list)
-    
+
     validate_square_dot_and_square(batch)
-    
-    
+
+
 def test_kite_house_batching():
-    
+
     '''
-    
+
       2---3---4          9
      / \ /              / \
     0---1              8---7
                        |   |
                        5---6
-                       
+
       . 4 . 5 .          .
      2 1 3             10 11
     . 0 .              . 8 .
                        9   7
                        . 6 .
-                       
+
       .---.---.          .
      /0\1/              /2\
     .---.              .---.
                        |   |
                        .---.
-    
+
     '''
     kite = get_kite_complex()
     house = get_house_complex()
     complex_list = [kite, house]
     batch = ComplexBatch.from_complex_list(complex_list)
-    
+
     validate_kite_and_house(batch)
-    
+
 
 def test_data_loader():
-    
+
     data_list_1 = [
         get_house_complex(),
         get_house_complex(),
         get_house_complex(),
         get_square_complex()]
-    
+
     data_list_2 = [
         get_house_complex(),
         get_square_complex(),
         get_house_complex(),
         get_house_complex()]
-    
+
     data_list_3 = [
         get_house_complex(),
         get_square_complex(),
         get_pyramid_complex(),
         get_pyramid_complex()]
-    
+
     data_list_4 = [
         get_square_dot_complex(),
         get_square_complex(),
         get_kite_complex(),
         get_house_complex(),
         get_house_complex()]
-    
+
     data_loader_1 = DataLoader(data_list_1, batch_size=2)
     data_loader_2 = DataLoader(data_list_2, batch_size=3)
     data_loader_3 = DataLoader(data_list_3, batch_size=3, max_dim=3)
     data_loader_4 = DataLoader(data_list_4, batch_size=2)
-    
-    
+
+
     count = 0
     for batch in data_loader_1:
         count += 1
@@ -500,7 +500,7 @@ def test_data_loader():
         elif count == 2:
             validate_house_and_square(batch)
     assert count == 2
-            
+
     count = 0
     for batch in data_loader_2:
         count += 1
@@ -509,12 +509,12 @@ def test_data_loader():
         elif count == 2:
             validate_house_no_batching(batch)
     assert count == 2
-    
+
     count = 0
     for batch in data_loader_3:
         count += 1
     assert count == 2
-    
+
     count = 0
     for batch in data_loader_4:
         count += 1
@@ -883,7 +883,7 @@ def test_batching_returns_the_same_down_attr():
             else:
                 assert len(xs[i]) == len(batched_xs[i])
                 assert torch.equal(xs[i], batched_xs[i])
-                
+
 
 @pytest.mark.data
 def test_batching_of_boundary_index_on_proteins():
@@ -950,7 +950,7 @@ def test_batching_of_boundary_index_on_proteins():
         else:
             assert len(xs_cells[i]) == len(batched_xs_cells[i])
             assert torch.equal(xs_cells[i], batched_xs_cells[i])
-                
+
 
 
 def test_batching_of_boundary_index():
@@ -1017,7 +1017,7 @@ def test_batching_of_boundary_index():
             else:
                 assert len(xs_cells[i]) == len(batched_xs_cells[i])
                 assert torch.equal(xs_cells[i], batched_xs_cells[i])
-                
+
 
 @pytest.mark.data
 def test_data_loader_shuffling():

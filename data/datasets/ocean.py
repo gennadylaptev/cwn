@@ -1,8 +1,8 @@
 import pickle
 import os.path as osp
 
-from data.datasets import InMemoryComplexDataset
-from data.datasets.ocean_utils import load_ocean_dataset
+from cwn.data.datasets import InMemoryComplexDataset
+from cwn.data.datasets.ocean_utils import load_ocean_dataset
 
 
 # TODO: Set up a cochain dataset structure or make complex dataset better support cochain-only data.

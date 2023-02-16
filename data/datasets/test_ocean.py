@@ -1,6 +1,6 @@
 import torch
 import pytest
-from data.datasets.ocean_utils import load_ocean_dataset
+from cwn.data.datasets.ocean_utils import load_ocean_dataset
 
 
 @pytest.mark.data

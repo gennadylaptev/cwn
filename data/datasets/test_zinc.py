@@ -2,9 +2,9 @@ import torch
 import os.path as osp
 import pytest
 
-from data.data_loading import load_dataset
-from data.helper_test import (check_edge_index_are_the_same, 
-                              check_edge_attr_are_the_same, get_rings, 
+from cwn.data.data_loading import load_dataset
+from cwn.data.helper_test import (check_edge_index_are_the_same,
+                              check_edge_attr_are_the_same, get_rings,
                               get_complex_rings)
 from torch_geometric.datasets import ZINC
 

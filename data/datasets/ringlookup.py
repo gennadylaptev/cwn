@@ -1,9 +1,9 @@
 import torch
 import os.path as osp
 
-from data.datasets import InMemoryComplexDataset
-from data.datasets.ring_utils import generate_ringlookup_graph_dataset
-from data.utils import convert_graph_dataset_with_rings
+from cwn.data.datasets import InMemoryComplexDataset
+from cwn.data.datasets.ring_utils import generate_ringlookup_graph_dataset
+from cwn.data.utils import convert_graph_dataset_with_rings
 
 
 class RingLookupDataset(InMemoryComplexDataset):

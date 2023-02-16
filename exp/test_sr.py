@@ -3,9 +3,9 @@ import numpy as np
 import random
 import pytest
 
-from data.data_loading import DataLoader, load_dataset
-from exp.prepare_sr_tests import prepare
-from mp.models import MessagePassingAgnostic, SparseCIN
+from cwn.data.data_loading import DataLoader, load_dataset
+from cwn.exp.prepare_sr_tests import prepare
+from cwn.mp.models import MessagePassingAgnostic, SparseCIN
 
 def _get_cwn_sr_embeddings(family, seed, baseline=False):
 
@@ -41,8 +41,8 @@ def _get_cwn_sr_embeddings(family, seed, baseline=False):
 
     # Instantiate model
     if not baseline:
-        model = SparseCIN(num_input_features=1, num_classes=complexes.num_classes, num_layers=num_layers, hidden=hidden, 
-                            use_coboundaries=use_coboundaries, nonlinearity=nonlinearity, graph_norm=graph_norm, 
+        model = SparseCIN(num_input_features=1, num_classes=complexes.num_classes, num_layers=num_layers, hidden=hidden,
+                            use_coboundaries=use_coboundaries, nonlinearity=nonlinearity, graph_norm=graph_norm,
                             readout=readout, final_readout=final_readout, readout_dims=readout_dims)
     else:
         hidden = 256
@@ -57,8 +57,8 @@ def _get_cwn_sr_embeddings(family, seed, baseline=False):
     data_loader_perm = DataLoader(permuted_complexes, batch_size=8, shuffle=False, num_workers=16, max_dim=2)
 
     with torch.no_grad():
-        embeddings = list()        
-        perm_embeddings = list()        
+        embeddings = list()
+        perm_embeddings = list()
         for batch in data_loader:
             batch.nodes.x = batch.nodes.x.double()
             batch.edges.x = batch.edges.x.double()

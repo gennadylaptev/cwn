@@ -1,8 +1,8 @@
 import pickle
 import os.path as osp
 
-from data.datasets import InMemoryComplexDataset
-from data.datasets.flow_utils import load_flow_dataset
+from cwn.data.datasets import InMemoryComplexDataset
+from cwn.data.datasets.flow_utils import load_flow_dataset
 
 
 # TODO: Set up a cochain dataset structure or make complex dataset better support cochain-only data.

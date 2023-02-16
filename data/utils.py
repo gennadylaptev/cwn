@@ -7,13 +7,14 @@ import itertools
 import networkx as nx
 
 from tqdm import tqdm
-from data.complex import Cochain, Complex
 from typing import List, Dict, Optional, Union
 from torch import Tensor
 from torch_geometric.typing import Adj
 from torch_scatter import scatter
-from data.parallel import ProgressParallel
 from joblib import delayed
+
+from cwn.data.parallel import ProgressParallel
+from cwn.data.complex import Cochain, Complex
 
 
 def pyg_to_simplex_tree(edge_index: Tensor, size: int):
@@ -44,6 +45,7 @@ def get_simplex_boundaries(simplex):
 
 def build_tables(simplex_tree, size):
     complex_dim = simplex_tree.dimension()
+
     # Each of these data structures has a separate entry per dimension.
     id_maps = [{} for _ in range(complex_dim+1)] # simplex -> id
     simplex_tables = [[] for _ in range(complex_dim+1)] # matrix of simplices
@@ -67,6 +69,7 @@ def build_tables(simplex_tree, size):
 
 def extract_boundaries_and_coboundaries_from_simplex_tree(simplex_tree, id_maps, complex_dim: int):
     """Build two maps simplex -> its coboundaries and simplex -> its boundaries"""
+
     # The extra dimension is added just for convenience to avoid treating it as a special case.
     boundaries = [{} for _ in range(complex_dim+2)]  # simplex -> boundaries
     coboundaries = [{} for _ in range(complex_dim+2)]  # simplex -> coboundaries
@@ -145,10 +148,13 @@ def construct_features(vx: Tensor, cell_tables, init_method: str) -> List:
         aux_1 = []
         aux_0 = []
         for c, cell in enumerate(cell_tables[dim]):
+            # create a mask w/ current cell idx
             aux_1 += [c for _ in range(len(cell))]
             aux_0 += cell
         node_cell_index = torch.LongTensor([aux_0, aux_1])
         in_features = vx.index_select(0, node_cell_index[0])
+
+        # append feature matrix for the current cell dim
         features.append(scatter(in_features, node_cell_index[1], dim=0,
                                 dim_size=len(cell_tables[dim]), reduce=init_method))
 
@@ -193,7 +199,7 @@ def generate_cochain(dim, x, all_upper_index, all_lower_index,
                       if len(all_shared_coboundaries[dim]) > 0 else None)
     shared_boundaries = (torch.tensor(all_shared_boundaries[dim], dtype=torch.long)
                     if len(all_shared_boundaries[dim]) > 0 else None)
-    
+
     boundary_index = None
     if len(boundaries_tables[dim]) > 0:
         boundary_index = [list(), list()]
@@ -202,7 +208,7 @@ def generate_cochain(dim, x, all_upper_index, all_lower_index,
                 boundary_index[1].append(s)
                 boundary_index[0].append(boundary)
         boundary_index = torch.LongTensor(boundary_index)
-        
+
     if num_cells_down is None:
         assert shared_boundaries is None
     if num_cells_up == 0:
@@ -221,10 +227,15 @@ def generate_cochain(dim, x, all_upper_index, all_lower_index,
                  num_cells_up=num_cells_up, boundary_index=boundary_index)
 
 
-def compute_clique_complex_with_gudhi(x: Tensor, edge_index: Adj, size: int,
-                                      expansion_dim: int = 2, y: Tensor = None,
-                                      include_down_adj=True,
-                                      init_method: str = 'sum') -> Complex:
+def compute_clique_complex_with_gudhi(
+    x: Tensor,
+    edge_index: Adj,
+    size: int,
+    expansion_dim: int = 2,
+    y: Tensor = None,
+    include_down_adj=True,
+    init_method: str = 'sum',
+) -> Complex:
     """Generates a clique complex of a pyG graph via gudhi.
 
     Args:
@@ -283,8 +294,10 @@ def convert_graph_dataset_with_gudhi(dataset, expansion_dim: int, include_down_a
         complex = compute_clique_complex_with_gudhi(data.x, data.edge_index, data.num_nodes,
             expansion_dim=expansion_dim, y=data.y, include_down_adj=include_down_adj,
             init_method=init_method)
+
         if complex.dimension > dimension:
             dimension = complex.dimension
+
         for dim in range(complex.dimension + 1):
             if num_features[dim] is None:
                 num_features[dim] = complex.cochains[dim].num_features
@@ -298,6 +311,7 @@ def convert_graph_dataset_with_gudhi(dataset, expansion_dim: int, include_down_a
 # ---- support for rings as cells
 
 def get_rings(edge_index, max_k=7):
+
     if isinstance(edge_index, torch.Tensor):
         edge_index = edge_index.numpy()
 
@@ -306,6 +320,7 @@ def get_rings(edge_index, max_k=7):
     graph_gt.add_edge_list(edge_list)
     gt.stats.remove_self_loops(graph_gt)
     gt.stats.remove_parallel_edges(graph_gt)
+
     # We represent rings with their original node ordering
     # so that we can easily read out the boundaries
     # The use of the `sorted_rings` set allows to discard
@@ -319,26 +334,68 @@ def get_rings(edge_index, max_k=7):
         pattern_edge_list = list(pattern.edges)
         pattern_gt = gt.Graph(directed=False)
         pattern_gt.add_edge_list(pattern_edge_list)
+
+        # get subgraph isomorphisms
         sub_isos = top.subgraph_isomorphism(pattern_gt, graph_gt, induced=True, subgraph=True,
                                            generator=True)
+        # get tuples w/ vertices indices
         sub_iso_sets = map(lambda isomorphism: tuple(isomorphism.a), sub_isos)
         for iso in sub_iso_sets:
             if tuple(sorted(iso)) not in sorted_rings:
                 rings.add(iso)
                 sorted_rings.add(tuple(sorted(iso)))
+
     rings = list(rings)
     return rings
 
 
-def build_tables_with_rings(edge_index, simplex_tree, size, max_k):
-    
+def filter_rings(rings: list[tuple[int]], edge_attr: torch.Tensor, thr=0.95):
+    assert len(edge_attr.shape) == 1, 'edge_attr must be 1-dim'
+    res = []
+    for ring in rings:
+        weights = edge_attr.index_select(0, torch.tensor(ring))
+        if weights.mean() > thr:
+            res.append(ring)
+    return res
+
+
+def select_top_pt_rings(rings: list[tuple[int]], edge_attr: torch.Tensor, pt=0.01):
+    assert len(edge_attr.shape) == 1, 'edge_attr must be 1-dim'
+    res = []
+    for ring in rings:
+        weights = edge_attr.index_select(0, torch.tensor(ring))
+        res.append((weights.mean(), ring))
+    res.sort(key=lambda x: x[0], reverse=True)
+    return [x[1] for x in res[:int(pt * len(rings))]]
+
+
+def build_tables_with_rings(
+    edge_index,
+    simplex_tree,
+    size,
+    max_k,
+    edge_attr = None,
+    filter_ring_thr: Optional[float] = None,
+    top_pt_rings: Optional[float] = None,
+):
+
     # Build simplex tables and id_maps up to edges by conveniently
     # invoking the code for simplicial complexes
     cell_tables, id_maps = build_tables(simplex_tree, size)
-    
+
     # Find rings in the graph
     rings = get_rings(edge_index, max_k=max_k)
-    
+
+    # Filter number of rigns
+    if filter_ring_thr is not None and top_pt_rings is not None:
+        raise ValueError('set either `filter_ring_thr` or `top_pt_rings`')
+    if filter_ring_thr is not None:
+        assert edge_attr is not None, 'pass edge_attr if you want to filter by mean edge_weight'
+        rings = filter_rings(rings, edge_attr, thr=filter_ring_thr)
+    if top_pt_rings is not None:
+        assert edge_attr is not None, 'pass edge_attr if you want to filter by top_pt rings'
+        rings = select_top_pt_rings(rings, edge_attr, pt=top_pt_rings)
+
     if len(rings) > 0:
         # Extend the tables with rings as 2-cells
         id_maps += [{}]
@@ -375,7 +432,7 @@ def extract_boundaries_and_coboundaries_with_rings(simplex_tree, id_maps):
     assert simplex_tree.dimension() <= 1
     boundaries_tables, boundaries, coboundaries = extract_boundaries_and_coboundaries_from_simplex_tree(
                                             simplex_tree, id_maps, simplex_tree.dimension())
-    
+
     assert len(id_maps) <= 3
     if len(id_maps) == 3:
         # Extend tables with boundary and coboundary information of rings
@@ -393,15 +450,24 @@ def extract_boundaries_and_coboundaries_with_rings(simplex_tree, id_maps):
                     coboundaries[1][boundary] = list()
                 coboundaries[1][boundary].append(cell)
                 boundaries_tables[2][-1].append(id_maps[1][boundary])
-    
+
     return boundaries_tables, boundaries, coboundaries
 
 
-def compute_ring_2complex(x: Union[Tensor, np.ndarray], edge_index: Union[Tensor, np.ndarray],
-                          edge_attr: Optional[Union[Tensor, np.ndarray]],
-                          size: int, y: Optional[Union[Tensor, np.ndarray]] = None, max_k: int = 7,
-                          include_down_adj=True, init_method: str = 'sum',
-                          init_edges=True, init_rings=False) -> Complex:
+def compute_ring_2complex(
+    x: Union[Tensor, np.ndarray],
+    edge_index: Union[Tensor, np.ndarray],
+    edge_attr: Optional[Union[Tensor, np.ndarray]],
+    size: int,
+    y: Optional[Union[Tensor, np.ndarray]] = None,
+    max_k: int = 7,
+    include_down_adj=True,
+    init_method: str = 'sum',
+    init_edges=True,
+    init_rings=False,
+    filter_ring_thr: Optional[float] = None,
+    top_pt_rings: Optional[float] = None,
+) -> Complex:
     """Generates a ring 2-complex of a pyG graph via graph-tool.
 
     Args:
@@ -435,7 +501,7 @@ def compute_ring_2complex(x: Union[Tensor, np.ndarray], edge_index: Union[Tensor
         assert edge_index.size(1) == 0
 
     # Builds tables of the cellular complexes at each level and their IDs
-    cell_tables, id_maps = build_tables_with_rings(edge_index, simplex_tree, size, max_k)
+    cell_tables, id_maps = build_tables_with_rings(edge_index, simplex_tree, size, max_k, edge_attr, filter_ring_thr, top_pt_rings)
     assert len(id_maps) <= 3
     complex_dim = len(id_maps)-1
 
@@ -446,7 +512,7 @@ def compute_ring_2complex(x: Union[Tensor, np.ndarray], edge_index: Union[Tensor
     # here we force complex dimension to be 2
     shared_boundaries, shared_coboundaries, lower_idx, upper_idx = build_adj(boundaries, co_boundaries, id_maps,
                                                                    complex_dim, include_down_adj)
-    
+
     # Construct features for the higher dimensions
     xs = [x, None, None]
     constructed_features = construct_features(x, cell_tables, init_method)
@@ -454,7 +520,7 @@ def compute_ring_2complex(x: Union[Tensor, np.ndarray], edge_index: Union[Tensor
         assert len(constructed_features) == 1
     if init_rings and len(constructed_features) > 2:
         xs[2] = constructed_features[2]
-    
+
     if init_edges and simplex_tree.dimension() >= 1:
         if edge_attr is None:
             xs[1] = constructed_features[1]
@@ -498,9 +564,17 @@ def compute_ring_2complex(x: Union[Tensor, np.ndarray], edge_index: Union[Tensor
     return Complex(*cochains, y=complex_y, dimension=complex_dim)
 
 
-def convert_graph_dataset_with_rings(dataset, max_ring_size=7, include_down_adj=False,
-                                     init_method: str = 'sum', init_edges=True, init_rings=False,
-                                     n_jobs=1):
+def convert_graph_dataset_with_rings(
+    dataset,  # or datalist, for example
+    max_ring_size=7,
+    include_down_adj=False,
+    init_method: str = 'sum',
+    init_edges=True,
+    init_rings=False,
+    filter_ring_thr: Optional[float] = None,
+    top_pt_rings: Optional[float] = None,
+    n_jobs=1,
+):
     dimension = -1
     num_features = [None, None, None]
 
@@ -513,11 +587,19 @@ def convert_graph_dataset_with_rings(dataset, max_ring_size=7, include_down_adj=
     parallel = ProgressParallel(n_jobs=n_jobs, use_tqdm=True, total=len(dataset))
     # It is important we supply a numpy array here. tensors seem to slow joblib down significantly.
     complexes = parallel(delayed(compute_ring_2complex)(
-        maybe_convert_to_numpy(data.x), maybe_convert_to_numpy(data.edge_index),
-        maybe_convert_to_numpy(data.edge_attr),
-        data.num_nodes, y=maybe_convert_to_numpy(data.y), max_k=max_ring_size,
-        include_down_adj=include_down_adj, init_method=init_method,
-        init_edges=init_edges, init_rings=init_rings) for data in dataset)
+            maybe_convert_to_numpy(data.x),
+            maybe_convert_to_numpy(data.edge_index),
+            maybe_convert_to_numpy(data.edge_attr),
+            data.num_nodes,
+            y=maybe_convert_to_numpy(data.y),
+            max_k=max_ring_size,
+            include_down_adj=include_down_adj,
+            init_method=init_method,
+            init_edges=init_edges,
+            init_rings=init_rings,
+            filter_ring_thr=filter_ring_thr,
+            top_pt_rings=top_pt_rings,
+        ) for data in dataset)
 
     # NB: here we perform additional checks to verify the order of complexes
     # corresponds to that of input graphs after _parallel_ conversion

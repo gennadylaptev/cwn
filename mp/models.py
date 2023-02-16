@@ -3,10 +3,11 @@ import torch.nn.functional as F
 
 from torch.nn import Linear, Sequential, BatchNorm1d as BN
 from torch_geometric.nn import JumpingKnowledge
-from mp.layers import (
-    CINConv, EdgeCINConv, SparseCINConv, DummyCellularMessagePassing, OrientedConv)
-from mp.nn import get_nonlinearity, get_pooling_fn, pool_complex, get_graph_norm
-from data.complex import ComplexBatch, CochainBatch
+from cwn.mp.layers import (
+    CINConv, EdgeCINConv, SparseCINConv, DummyCellularMessagePassing, OrientedConv,
+)
+from cwn.mp.nn import get_nonlinearity, get_pooling_fn, pool_complex, get_graph_norm
+from cwn.data.complex import ComplexBatch, CochainBatch
 
 
 class CIN0(torch.nn.Module):
@@ -117,12 +118,25 @@ class SparseCIN(torch.nn.Module):
     https://github.com/rusty1s/pytorch_geometric/blob/master/benchmark/kernel/gin.py
     """
 
-    def __init__(self, num_input_features, num_classes, num_layers, hidden,
-                 dropout_rate: float = 0.5,
-                 max_dim: int = 2, jump_mode=None, nonlinearity='relu', readout='sum',
-                 train_eps=False, final_hidden_multiplier: int = 2, use_coboundaries=False,
-                 readout_dims=(0, 1, 2), final_readout='sum', apply_dropout_before='lin2',
-                 graph_norm='bn'):
+    def __init__(
+        self,
+        num_input_features,
+        num_classes,
+        num_layers,
+        hidden,
+        dropout_rate: float = 0.5,
+        max_dim: int = 2,
+        jump_mode=None,
+        nonlinearity='relu',
+        readout='sum',
+        train_eps=False,
+        final_hidden_multiplier: int = 2,
+        use_coboundaries=False,
+        readout_dims=(0, 1, 2),
+        final_readout='sum',
+        apply_dropout_before='lin2',
+        graph_norm='bn',
+    ):
         super(SparseCIN, self).__init__()
 
         self.max_dim = max_dim
@@ -130,25 +144,44 @@ class SparseCIN(torch.nn.Module):
             self.readout_dims = tuple([dim for dim in readout_dims if dim <= max_dim])
         else:
             self.readout_dims = list(range(max_dim+1))
+
+        # store init args
         self.final_readout = final_readout
         self.dropout_rate = dropout_rate
         self.apply_dropout_before = apply_dropout_before
         self.jump_mode = jump_mode
-        self.convs = torch.nn.ModuleList()
         self.nonlinearity = nonlinearity
+
+        # init act, norm and pool
         self.pooling_fn = get_pooling_fn(readout)
         self.graph_norm = get_graph_norm(graph_norm)
         act_module = get_nonlinearity(nonlinearity, return_module=True)
+
+        # create a list of conv
+        self.convs = torch.nn.ModuleList()
         for i in range(num_layers):
             layer_dim = num_input_features if i == 0 else hidden
             self.convs.append(
-                SparseCINConv(up_msg_size=layer_dim, down_msg_size=layer_dim,
-                    boundary_msg_size=layer_dim, passed_msg_boundaries_nn=None, passed_msg_up_nn=None,
-                    passed_update_up_nn=None, passed_update_boundaries_nn=None,
-                    train_eps=train_eps, max_dim=self.max_dim,
-                    hidden=hidden, act_module=act_module, layer_dim=layer_dim,
-                    graph_norm=self.graph_norm, use_coboundaries=use_coboundaries))
+                SparseCINConv(
+                    up_msg_size=layer_dim,
+                    down_msg_size=layer_dim,
+                    boundary_msg_size=layer_dim,
+                    passed_msg_boundaries_nn=None,
+                    passed_msg_up_nn=None,
+                    passed_update_up_nn=None,
+                    passed_update_boundaries_nn=None,
+                    train_eps=train_eps,
+                    max_dim=self.max_dim,
+                    hidden=hidden,
+                    act_module=act_module,
+                    layer_dim=layer_dim,
+                    graph_norm=self.graph_norm,
+                    use_coboundaries=use_coboundaries,
+                )
+            )
         self.jump = JumpingKnowledge(jump_mode) if jump_mode is not None else None
+
+        # create final lin layers (lin1, lin2)
         self.lin1s = torch.nn.ModuleList()
         for _ in range(max_dim + 1):
             if jump_mode == 'cat':
@@ -175,6 +208,7 @@ class SparseCIN(torch.nn.Module):
         # The MP output is of shape [message_passing_dim, batch_size, feature_dim]
         pooled_xs = torch.zeros(self.max_dim + 1, batch_size, xs[0].size(-1),
             device=batch_size.device)
+
         for i in range(len(xs)):
             # It's very important that size is supplied.
             pooled_xs[i, :, :] = self.pooling_fn(xs[i], data.cochains[i].batch, size=batch_size)
@@ -196,13 +230,17 @@ class SparseCIN(torch.nn.Module):
 
         xs, jump_xs = None, None
         res = {}
+        # import pdb; pdb.set_trace()
         for c, conv in enumerate(self.convs):
+            # list of CochainMessagePassingParams
             params = data.get_all_cochain_params(max_dim=self.max_dim, include_down_features=False)
             start_to_process = 0
             # if i == len(self.convs) - 2:
             #     start_to_process = 1
             # if i == len(self.convs) - 1:
             #     start_to_process = 2
+
+            # conv: SparseCINConv
             xs = conv(*params, start_to_process=start_to_process)
             data.set_xs(xs)
 
@@ -226,7 +264,7 @@ class SparseCIN(torch.nn.Module):
         if include_partial:
             for k in range(len(xs)):
                 res[f"pool_{k}"] = xs[k]
-        
+
         new_xs = []
         for i, x in enumerate(xs):
             if self.apply_dropout_before == 'lin1':
@@ -234,7 +272,7 @@ class SparseCIN(torch.nn.Module):
             new_xs.append(act(self.lin1s[self.readout_dims[i]](x)))
 
         x = torch.stack(new_xs, dim=0)
-        
+
         if self.apply_dropout_before == 'final_readout':
             x = F.dropout(x, p=self.dropout_rate, training=self.training)
         if self.final_readout == 'mean':
@@ -256,7 +294,7 @@ class SparseCIN(torch.nn.Module):
     def __repr__(self):
         return self.__class__.__name__
 
-    
+
 class EdgeCIN0(torch.nn.Module):
     """
     A variant of CIN0 operating up to edge level. It may optionally ignore two_cell features.
@@ -575,7 +613,7 @@ class EdgeMPNN(torch.nn.Module):
 
         # At this point we have invariance: we can use any non-linearity we like.
         # Here, independently from previous non-linearities, we choose ReLU.
-        # Note that this makes the model non-linear even when employing identity 
+        # Note that this makes the model non-linear even when employing identity
         # in previous layers.
         x = torch.relu(self.lin1(x))
         x = F.dropout(x, p=self.dropout_rate, training=self.training)
@@ -616,7 +654,7 @@ class MessagePassingAgnostic(torch.nn.Module):
         self.lin2.reset_parameters()
 
     def forward(self, data: ComplexBatch):
-        
+
         params = data.get_all_cochain_params(max_dim=self.max_dim, include_down_features=False)
         xs = list()
         for dim in range(len(params)):

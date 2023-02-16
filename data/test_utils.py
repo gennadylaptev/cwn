@@ -1,10 +1,10 @@
 import torch
 
 from torch_geometric.data import Data
-from data.utils import compute_clique_complex_with_gudhi, compute_ring_2complex
-from data.utils import convert_graph_dataset_with_gudhi, convert_graph_dataset_with_rings
-from data.complex import ComplexBatch
-from data.dummy_complexes import convert_to_graph, get_testing_complex_list
+from cwn.data.utils import compute_clique_complex_with_gudhi, compute_ring_2complex
+from cwn.data.utils import convert_graph_dataset_with_gudhi, convert_graph_dataset_with_rings
+from cwn.data.complex import ComplexBatch
+from cwn.data.dummy_complexes import convert_to_graph, get_testing_complex_list
 import pytest
 
 # TODO: Gudhi does not preserve the order of the edges in edge_index. It uses a lexicographic order
@@ -16,14 +16,14 @@ import pytest
 #   / \
 #  3---2
 #  |   |
-#  0---1 
+#  0---1
 #
 #    .
 #   4 5
 #  . 2 .
 #  3   1
-#  . 0 . 
-# 
+#  . 0 .
+#
 #    .
 #   /0\
 #  .---.
@@ -43,19 +43,19 @@ def test_gudhi_clique_complex(house_edge_index):
        / \
       3---2
       |   |
-      0---1 
-    
+      0---1
+
         .
        5 4
       . 3 .
       1   2
-      . 0 . 
-     
+      . 0 .
+
         .
        /0\
       .---.
       |   |
-      .---. 
+      .---.
     '''
     house = Data(edge_index=house_edge_index, x=torch.arange(0, 5, dtype=torch.float).view(5, 1), y=torch.tensor([1]))
     house.num_nodes = house_edge_index.max().item() + 1
@@ -210,7 +210,7 @@ def test_gudhi_integration_with_batching_with_adj(house_edge_index):
     assert batch.edges.lower_index.size(1) == 18*3
     assert list(batch.edges.boundary_index.size()) == [2, 3*2*6]
     assert list(batch.two_cells.boundary_index.size()) == [2, 1*3*3]
-    
+
 
 def test_construction_of_ring_2complex(house_edge_index):
     house = Data(edge_index=house_edge_index, x=torch.arange(0, 5, dtype=torch.float).view(5, 1), y=torch.tensor([1]))
@@ -280,37 +280,37 @@ def test_construction_of_ring_2complex(house_edge_index):
     assert torch.equal(t_params.down_index, expected_t_down_index)
     expected_t_down_attr = torch.tensor([[5], [5]], dtype=torch.float)
     assert torch.equal(t_params.kwargs['down_attr'], expected_t_down_attr)
-    
+
     assert t_params.up_index is None
     assert torch.equal(t_params.kwargs['boundary_attr'], expected_e_x)
     expected_t_boundary_index = torch.tensor([[0, 1, 2, 3, 3, 4, 5],
                                           [0, 0, 0, 0, 1, 1, 1]], dtype=torch.long)
     assert torch.equal(t_params.kwargs['boundary_index'], expected_t_boundary_index)
     assert torch.equal(house_complex.y, house.y)
-    
+
 
 def test_construction_of_ring_2complex_with_edge_feats(house_edge_index):
-    
+
     '''
         4
        / \
       3---2
       |   |
-      0---1 
-    
+      0---1
+
         .
        5 4
       . 3 .
       1   2
-      . 0 . 
-     
+      . 0 .
+
         .
        /0\
       .---.
       | 1 |
-      .---. 
+      .---.
     '''
-    
+
     edge_attr = torch.FloatTensor(
                             [[0.0, 1.0],
                              [0.0, 3.0],
@@ -324,7 +324,7 @@ def test_construction_of_ring_2complex_with_edge_feats(house_edge_index):
                              [3.0, 4.0],
                              [2.0, 4.0],
                              [3.0, 4.0]])
-    
+
     house = Data(edge_index=house_edge_index, x=torch.arange(0, 5, dtype=torch.float).view(5, 1), y=torch.tensor([1]),
                  edge_attr=edge_attr)
     house.num_nodes = house_edge_index.max().item() + 1
@@ -397,7 +397,7 @@ def test_construction_of_ring_2complex_with_edge_feats(house_edge_index):
     assert torch.equal(t_params.down_index, expected_t_down_index)
     expected_t_down_attr = torch.tensor([[2.0, 3.0], [2.0, 3.0]], dtype=torch.float)
     assert torch.equal(t_params.kwargs['down_attr'], expected_t_down_attr)
-    
+
     assert t_params.up_index is None
     assert torch.equal(t_params.kwargs['boundary_attr'], expected_e_x)
     expected_t_boundary_index = torch.tensor([[0, 1, 2, 3, 3, 4, 5],
@@ -407,7 +407,7 @@ def test_construction_of_ring_2complex_with_edge_feats(house_edge_index):
 
 
 def test_construction_of_ring_2complex_with_larger_k_size(house_edge_index):
-    
+
     # Here we check that the max ring size does not have any effect when it is larger
     # then the largest ring present in the original graph
 
@@ -473,7 +473,7 @@ def test_construction_of_ring_2complex_with_larger_k_size(house_edge_index):
     assert t_params_b.kwargs['up_attr'] is None
     assert torch.equal(t_params_a.kwargs['boundary_attr'], t_params_b.kwargs['boundary_attr'])
     assert torch.equal(t_params_a.kwargs['boundary_index'], t_params_b.kwargs['boundary_index'])
-    
+
     # Check label
     assert torch.equal(house_cell_a.y, house_cell_b.y)
 
@@ -547,11 +547,11 @@ def test_construction_of_ring_2complex_with_smaller_k_size(house_edge_index):
     assert t_params_b.kwargs['up_attr'] is None
     assert torch.equal(t_params_a.kwargs['boundary_attr'], t_params_b.kwargs['boundary_attr'])
     assert torch.equal(t_params_a.kwargs['boundary_index'], t_params_b.kwargs['boundary_index'])
-    
+
     # Check label
     assert torch.equal(house_cell.y, house_simp.y)
 
-    
+
 def test_ring_2complex_dataset_conversion(house_edge_index):
     house1 = Data(edge_index=house_edge_index, x=torch.arange(0, 5, dtype=torch.float).view(5, 1), y=torch.tensor([1]))
     house2 = Data(edge_index=house_edge_index, x=torch.arange(0, 5, dtype=torch.float).view(5, 1), y=torch.tensor([1]))
@@ -575,9 +575,9 @@ def test_ring_2complex_dataset_conversion(house_edge_index):
         assert complexes[i].edges.lower_index.size(1) == 18
         assert torch.equal(complexes[i].nodes.x, house1.x)
         assert torch.equal(complexes[i].y, house1.y)
-        
-        
-def test_ring_2complex_dataset_conversion_with_edge_feats(house_edge_index):    
+
+
+def test_ring_2complex_dataset_conversion_with_edge_feats(house_edge_index):
     edge_attr = torch.FloatTensor(
                         [[0.0, 1.0],
                          [0.0, 3.0],
@@ -622,7 +622,7 @@ def test_ring_2complex_dataset_conversion_with_edge_feats(house_edge_index):
         assert complexes[i].two_cells.x is None
         assert torch.equal(complexes[i].y, house1.y)
 
-        
+
 def test_simp_complex_conversion_completes():
     graphs = list(map(convert_to_graph, get_testing_complex_list()))
     _ = convert_graph_dataset_with_gudhi(graphs, expansion_dim=3)

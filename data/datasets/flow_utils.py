@@ -6,9 +6,10 @@ import itertools
 
 from scipy.spatial import Delaunay
 from scipy import sparse
-from data.complex import Cochain
-from data.parallel import ProgressParallel
 from joblib import delayed
+
+from cwn.data.complex import Cochain
+from cwn.data.parallel import ProgressParallel
 
 
 def is_inside_rectangle(x, rect):

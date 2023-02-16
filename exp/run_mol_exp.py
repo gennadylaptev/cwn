@@ -4,8 +4,8 @@ import copy
 import numpy as np
 import subprocess
 
-from exp.parser import get_parser
-from exp.run_exp import main
+from cwn.exp.parser import get_parser
+from cwn.exp.run_exp import main
 from itertools import product
 
 
@@ -89,7 +89,7 @@ def exp_main(passed_args):
         f'Test Max:               {final_test_max}\n'
         f'---------------------------------\n\n')
     print(msg)
-    
+
     # additionally write msg and configuration on file
     msg += str(args)
     filename = os.path.join(args.result_folder, f'{args.dataset}-{args.exp_name}/result.txt')

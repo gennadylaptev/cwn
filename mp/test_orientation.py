@@ -1,12 +1,12 @@
 import torch
 import numpy as np
 
-from data.datasets.flow import load_flow_dataset
-from mp.models import EdgeOrient, EdgeMPNN
-from mp.layers import OrientedConv
-from data.complex import CochainBatch
-from data.data_loading import DataLoader
-from data.datasets.flow_utils import build_cochain
+from cwn.data.datasets.flow import load_flow_dataset
+from cwn.mp.models import EdgeOrient, EdgeMPNN
+from cwn.mp.layers import OrientedConv
+from cwn.data.complex import CochainBatch
+from cwn.data.data_loading import DataLoader
+from cwn.data.datasets.flow_utils import build_cochain
 
 
 def generate_oriented_flow_pair():

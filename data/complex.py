@@ -607,6 +607,7 @@ class Complex(object):
                                include_top_features=True,
                                include_down_features=True,
                                include_boundary_features=True) -> List[CochainMessagePassingParams]:
+
         """Extracts the cochain parameters for message passing on the cochains up to max_dim.
 
         Args:
@@ -619,7 +620,7 @@ class Complex(object):
         """
         all_params = []
         return_dim = min(max_dim, self.dimension)
-        for dim in range(return_dim+1):
+        for dim in range(return_dim + 1):
             all_params.append(self.get_cochain_params(dim, max_dim=max_dim,
                                                     include_top_features=include_top_features,
                                                     include_down_features=include_down_features,

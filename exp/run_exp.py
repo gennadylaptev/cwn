@@ -288,10 +288,10 @@ def main(args):
     print(f"Trainable params: {trainable_params}")
     print(f"Total params    : {total_params}")
 
-    # instantiate optimiser
+    # Instantiate optimiser
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
-    # instantiate learning rate decay
+    # Instantiate learning rate decay
     if args.lr_scheduler == 'ReduceLROnPlateau':
         mode = 'min' if args.minimize else 'max'
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode=mode,
@@ -320,6 +320,8 @@ def main(args):
             print("=====Epoch {}".format(epoch))
             print('Training...')
             epoch_train_curve = train(model, device, train_loader, optimizer, args.task_type)
+
+            # append results of the current epoch
             train_loss_curve += epoch_train_curve
             epoch_train_loss = float(np.mean(epoch_train_curve))
 
@@ -328,6 +330,7 @@ def main(args):
             if epoch == 1 or epoch % args.train_eval_period == 0:
                 train_perf, _ = eval(model, device, train_loader, evaluator, args.task_type)
             train_curve.append(train_perf)
+
             valid_perf, epoch_val_loss = eval(model, device,
                 valid_loader, evaluator, args.task_type)#, dataset[split_idx["valid"]])
             valid_curve.append(valid_perf)

@@ -376,7 +376,6 @@ class CochainMessagePassing(torch.nn.Module):
             # Get corresponding message function
             message = self.get_msg_func(adjacency)
             # Run this method on lifted arguments
-            import pdb; pdb.set_trace()
             out = message(**msg_kwargs)
 
             aggr_kwargs = self.inspector.distribute(f'aggregate_{adjacency}', coll_dict)

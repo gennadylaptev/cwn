@@ -54,6 +54,7 @@ class ZincDataset(InMemoryComplexDataset):
         val_data = ZINC(self.raw_dir, subset=self._subset, split='val')
         test_data = ZINC(self.raw_dir, subset=self._subset, split='test')
 
+        # list of complexes
         data_list = []
         idx = []
         start = 0
@@ -64,10 +65,12 @@ class ZincDataset(InMemoryComplexDataset):
             include_down_adj=self.include_down_adj,
             init_edges=self._use_edge_features,
             init_rings=False,
-            n_jobs=self._n_jobs)
+            n_jobs=self._n_jobs,
+        )
         data_list += train_complexes
         idx.append(list(range(start, len(data_list))))
         start = len(data_list)
+
         print("Converting the validation dataset to a cell complex...")
         val_complexes, _, _ = convert_graph_dataset_with_rings(
             val_data,
@@ -75,10 +78,12 @@ class ZincDataset(InMemoryComplexDataset):
             include_down_adj=self.include_down_adj,
             init_edges=self._use_edge_features,
             init_rings=False,
-            n_jobs=self._n_jobs)
+            n_jobs=self._n_jobs,
+        )
         data_list += val_complexes
         idx.append(list(range(start, len(data_list))))
         start = len(data_list)
+
         print("Converting the test dataset to a cell complex...")
         test_complexes, _, _ = convert_graph_dataset_with_rings(
             test_data,
@@ -86,12 +91,15 @@ class ZincDataset(InMemoryComplexDataset):
             include_down_adj=self.include_down_adj,
             init_edges=self._use_edge_features,
             init_rings=False,
-            n_jobs=self._n_jobs)
+            n_jobs=self._n_jobs,
+        )
         data_list += test_complexes
         idx.append(list(range(start, len(data_list))))
 
         path = self.processed_paths[0]
         print(f'Saving processed dataset in {path}....')
+
+        # here we use collate function to store all complexes to disk
         torch.save(self.collate(data_list, 2), path)
 
         path = self.processed_paths[1]

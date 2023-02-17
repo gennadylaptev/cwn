@@ -45,6 +45,7 @@ from cwn.data.datasets import (
 # https://github.com/pytorch/pytorch/blob/v1.7.1/torch/_six.py
 int_classes = int
 
+
 class Collater(object):
     """Object that converts python lists of objects into the appropiate storage format.
 
